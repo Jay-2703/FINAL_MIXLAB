@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verify OTP - MixLab Studio</title>
+  <link rel="stylesheet" href="/frontend/public/css/auth.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+   <div class="wrapper">
+    <div class="otp-card">
+
+      <!-- These will change depending on register or forgot password -->
+      <h1 id="pageTitle">Verify Your Email</h1>
+      <p class="subtitle" id="pageSubtitle">Enter the OTP sent to your email address</p>
+
+      <!-- Email shown dynamically -->
+      <div class="email-display" id="emailDisplay"></div>
+
+      <form id="otpForm" class="form">
+        <div class="otp-input-group">
+          <input 
+            type="text"
+            id="otp"
+            placeholder="Enter 6-digit OTP"
+            maxlength="6"
+            inputmode="numeric"
+            required
+          />
+          <small class="helper-text">Check your email for the 6-digit code</small>
+
+        </div>
+
+        <button type="submit" class="btn-primary">Verify OTP</button>
+
+        <div class="resend-section">
+          <p class="resend-text">Didn't receive the code?</p>
+          <button type="button" id="resendBtn" class="btn-resend">Resend OTP</button>
+          <div id="resendTimer" class="resend-timer" style="display:none;"></div>
+        </div>
+
+        <!-- Back button will change based on whether user is registering or resetting password -->
+        <p class="back-text">
+          <a id="backLink" href="#">Back</a>
+        </p>
+
+      </form>
+
+      <div id="errorMessage" class="error-message" style="display:none;"></div>
+      <div id="successMessage" class="success-message" style="display:none;"></div>
+
+    </div>
+  </div>
+
+  <script src="/frontend/public/js/auth/verify-otp.js"></script>
+</body>
+</html>

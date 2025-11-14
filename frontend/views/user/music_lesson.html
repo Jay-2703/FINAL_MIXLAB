@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Music Lesson App</title>
+  <link rel="stylesheet" href="/frontend/public/css/music_lesson.css">
+</head>
+<body>
+  <!-- Screen 1: Home/Intro -->
+  <div id="screen-home" class="screen active">
+    <header class="app-header">
+      <h1>🎵 Music Master</h1>
+      <div class="user-info">
+        <span id="username-display">Guest</span>
+        <button id="profile-btn" class="btn-secondary" style="display:none;">Profile</button>
+        <button id="auth-btn" class="btn-secondary">Login</button>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="welcome-section">
+        <h2>Welcome to Music Master!</h2>
+        <p>Learn and play your favorite instruments with interactive lessons and games.</p>
+        <p>Choose between <strong>Play</strong> mode to test your skills or <strong>Learn</strong> mode to study at your own pace.</p>
+      </div>
+
+      <div class="mode-selection">
+        <h3>Select Your Mode:</h3>
+        <div class="mode-cards">
+          <div class="mode-card" data-mode="play">
+            <div class="mode-icon">🎮</div>
+            <h4>Play</h4>
+            <p>Test your skills with interactive games</p>
+          </div>
+          <div class="mode-card" data-mode="learn">
+            <div class="mode-icon">📚</div>
+            <h4>Learn</h4>
+            <p>Study lessons and improve your knowledge</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 2: Instrument Selection -->
+  <div id="screen-instrument" class="screen">
+    <header class="app-header">
+      <button class="btn-back">← Back</button>
+      <h2 id="mode-title">Select Instrument</h2>
+      <div class="user-info">
+        <span id="username-display-2">Guest</span>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="instrument-grid">
+        <div class="instrument-card" data-instrument="guitar">
+          <div class="instrument-icon">🎸</div>
+          <h3>Guitar</h3>
+          <p>Learn chords, strumming, and melodies</p>
+        </div>
+        <div class="instrument-card" data-instrument="piano">
+          <div class="instrument-icon">🎹</div>
+          <h3>Piano</h3>
+          <p>Master keys, scales, and compositions</p>
+        </div>
+        <div class="instrument-card" data-instrument="theory">
+          <div class="instrument-icon">🎼</div>
+          <h3>Music Theory</h3>
+          <p>Understand the fundamentals of music</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 3: Level/Module Selection -->
+  <div id="screen-selection" class="screen">
+    <header class="app-header">
+      <button class="btn-back">← Back</button>
+      <h2 id="selection-title">Select Level</h2>
+      <div class="user-info">
+        <span id="username-display-3">Guest</span>
+      </div>
+    </header>
+
+    <div class="container">
+      <div id="selection-grid" class="selection-grid"></div>
+    </div>
+  </div>
+
+  <!-- Screen 4: Game Play -->
+  <div id="screen-game" class="screen">
+    <header class="app-header">
+      <button class="btn-back">← Back</button>
+      <h2 id="game-title">Game</h2>
+      <div class="game-stats">
+        <span>Score: <strong id="game-score">0</strong></span>
+        <span>Time: <strong id="game-time">0</strong>s</span>
+      </div>
+    </header>
+
+    <div class="container">
+      <div id="game-container" class="game-container"></div>
+    </div>
+  </div>
+
+  <!-- Screen 4: Lesson Content -->
+  <div id="screen-lesson" class="screen">
+    <header class="app-header">
+      <button class="btn-back">← Back</button>
+      <h2 id="lesson-title">Lesson</h2>
+      <div class="user-info">
+        <span id="username-display-4">Guest</span>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="lesson-content">
+        <h3 id="lesson-heading"></h3>
+        <div id="lesson-text"></div>
+        <button id="next-lesson-btn" class="btn-primary">Next Lesson →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 5: Results -->
+  <div id="screen-result" class="screen">
+    <header class="app-header">
+      <h2>Results</h2>
+    </header>
+
+    <div class="container">
+      <div class="result-content">
+        <div class="result-icon">🎉</div>
+        <h3 id="result-message">Great Job!</h3>
+        <div class="result-stats">
+          <div class="stat-item">
+            <span class="stat-label">Points Earned</span>
+            <span class="stat-value" id="result-points">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Accuracy</span>
+            <span class="stat-value" id="result-accuracy">0%</span>
+          </div>
+        </div>
+        <div id="result-actions" class="result-actions"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Game Instructions -->
+  <div id="instruction-modal" class="modal">
+    <div class="modal-content">
+      <h3>How to Play</h3>
+      <div id="instruction-text"></div>
+      <button id="start-game-btn" class="btn-primary">Start Game</button>
+    </div>
+  </div>
+
+  <!-- Modal for Auth -->
+  <div id="auth-modal" class="modal">
+    <div class="modal-content">
+      <button class="modal-close">×</button>
+      <h3 id="auth-modal-title">Login</h3>
+      <form id="auth-form">
+        <input type="text" id="auth-username" placeholder="Username" required>
+        <input type="email" id="auth-email" placeholder="Email" style="display:none;">
+        <input type="password" id="auth-password" placeholder="Password" required>
+        <button type="submit" class="btn-primary">Login</button>
+      </form>
+      <p class="auth-toggle">
+        <span id="auth-toggle-text">Don't have an account?</span>
+        <a href="#" id="auth-toggle-link">Register</a>
+      </p>
+    </div>
+  </div>
+
+   <!-- Profile Modal -->
+  <div id="profile-modal" class="modal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeProfile()">×</button>
+      <h2>Player Profile</h2>
+      
+      <div class="profile-header">
+        <div class="profile-avatar">
+          <span>J</span>
+        </div>
+        <div class="profile-info">
+          <h3>JohnDoe</h3>
+          <p class="profile-joined">Joined: January 15, 2024</p>
+        </div>
+      </div>
+
+      <div class="profile-stats-grid">
+        <div class="profile-stat-card">
+          <div class="stat-icon">🏆</div>
+          <div class="stat-number">2450</div>
+          <div class="stat-label">Total Points</div>
+        </div>
+        <div class="profile-stat-card">
+          <div class="stat-icon">🎮</div>
+          <div class="stat-number">24</div>
+          <div class="stat-label">Games Played</div>
+        </div>
+        <div class="profile-stat-card">
+          <div class="stat-icon">📚</div>
+          <div class="stat-number">8</div>
+          <div class="stat-label">Lessons Done</div>
+        </div>
+        <div class="profile-stat-card">
+          <div class="stat-icon">⭐</div>
+          <div class="stat-number">6</div>
+          <div class="stat-label">Perfect Scores</div>
+        </div>
+        <div class="profile-stat-card">
+          <div class="stat-icon">🎯</div>
+          <div class="stat-number">82.5%</div>
+          <div class="stat-label">Avg Accuracy</div>
+        </div>
+        <div class="profile-stat-card">
+          <div class="stat-icon">🔥</div>
+          <div class="stat-number">5</div>
+          <div class="stat-label">Current Streak</div>
+        </div>
+      </div>
+
+      <div class="achievements-section">
+        <h3>🏅 Achievements <span style="color: #999;">(8/24)</span></h3>
+        <div class="achievements-grid">
+          <div class="achievement-card unlocked">
+            <div class="achievement-badge">🎵</div>
+            <h4>First Steps</h4>
+            <p>Complete your first game</p>
+            <div class="achievement-points">+50 points</div>
+            <div class="achievement-date">Earned: Jan 15</div>
+          </div>
+          <div class="achievement-card unlocked">
+            <div class="achievement-badge">📚</div>
+            <h4>Quick Learner</h4>
+            <p>Complete your first lesson</p>
+            <div class="achievement-points">+50 points</div>
+            <div class="achievement-date">Earned: Jan 16</div>
+          </div>
+          <div class="achievement-card unlocked">
+            <div class="achievement-badge">⭐</div>
+            <h4>Perfect Start</h4>
+            <p>Get 100% accuracy in a game</p>
+            <div class="achievement-points">+100 points</div>
+            <div class="achievement-date">Earned: Jan 18</div>
+          </div>
+          <div class="achievement-card unlocked">
+            <div class="achievement-badge">🎮</div>
+            <h4>Game Master</h4>
+            <p>Play 10 games</p>
+            <div class="achievement-points">+200 points</div>
+            <div class="achievement-date">Earned: Jan 22</div>
+          </div>
+          <div class="achievement-card unlocked">
+            <div class="achievement-badge">🎯</div>
+            <h4>Sharpshooter</h4>
+            <p>Get 5 perfect scores</p>
+            <div class="achievement-points">+300 points</div>
+            <div class="achievement-date">Earned: Jan 25</div>
+          </div>
+          <div class="achievement-card unlocked">
+            <div class="achievement-badge">🔥</div>
+            <h4>On Fire</h4>
+            <p>Maintain a 3-day streak</p>
+            <div class="achievement-points">+150 points</div>
+            <div class="achievement-date">Earned: Jan 28</div>
+          </div>
+          <div class="achievement-card unlocked">
+            <div class="achievement-badge">📖</div>
+            <h4>Student</h4>
+            <p>Complete 5 lessons</p>
+            <div class="achievement-points">+200 points</div>
+            <div class="achievement-date">Earned: Feb 1</div>
+          </div>
+          <div class="achievement-card unlocked">
+            <div class="achievement-badge">💰</div>
+            <h4>Point Collector</h4>
+            <p>Earn 1000 total points</p>
+            <div class="achievement-points">+100 points</div>
+            <div class="achievement-date">Earned: Feb 3</div>
+          </div>
+          <div class="achievement-card locked">
+            <div class="achievement-badge">🏆</div>
+            <h4>Dedicated Player</h4>
+            <p>Play 50 games</p>
+            <div class="achievement-points">+500 points</div>
+          </div>
+          <div class="achievement-card locked">
+            <div class="achievement-badge">💎</div>
+            <h4>Perfectionist</h4>
+            <p>Get 10 perfect scores</p>
+            <div class="achievement-points">+600 points</div>
+          </div>
+          <div class="achievement-card locked">
+            <div class="achievement-badge">🎓</div>
+            <h4>Scholar</h4>
+            <p>Complete 15 lessons</p>
+            <div class="achievement-points">+500 points</div>
+          </div>
+          <div class="achievement-card locked">
+            <div class="achievement-badge">⚡</div>
+            <h4>Unstoppable</h4>
+            <p>Maintain a 7-day streak</p>
+            <div class="achievement-points">+400 points</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Achievement Toast -->
+  <div id="achievement-toast" class="achievement-toast" style="display: none;">
+    <div class="toast-content">
+      <div class="toast-icon">🎉</div>
+      <div class="toast-text">
+        <div class="toast-title">Achievement Unlocked!</div>
+        <div class="toast-badge">
+          <span>🏆</span>
+          <span>Game Master</span>
+        </div>
+        <div class="toast-points">+200 points</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation Buttons -->
+  <div class="nav-buttons">
+    <button class="nav-btn" onclick="showToast()">Show Achievement</button>
+    <button class="nav-btn" onclick="showProfile()">View Profile</button>
+  </div>
+
+  <script type="module" src="/frontend/public/js/gamification/gamified.js"></script>
+  <script type="module" src="/frontend/public/js/lessons/music_lesson.js"></script>
+
+</body>
+</html>

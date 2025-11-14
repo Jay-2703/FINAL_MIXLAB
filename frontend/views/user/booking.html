@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking</title>
+  <link rel="stylesheet" href="booking.css">
+</head>
+<body class="booking-page">
+
+  <main style="max-width: 900px; margin: 28px auto;">
+    <section id="booking" class="booking-section">
+      <div class="card">
+        <h2 class="subheading">Request a Studio Booking</h2>
+
+        <form id="bookingForm" class="booking" onsubmit="return false;">
+          <!-- Full Name -->
+          <label for="name">Full Name</label>
+          <input id="name" name="name" placeholder="Your full name" required />
+
+          <!-- Address -->
+          <label for="address">Address</label>
+          <input id="address" name="address" placeholder="Home / Billing address" />
+
+          <!-- Date -->
+          <label for="date">Date</label>
+          <input id="date" name="date" type="date" required />
+
+          <!-- Time -->
+          <label for="time">Time</label>
+          <input id="time" name="time" type="time" required />
+
+          <!-- Hours -->
+          <label for="hours">Hours</label>
+          <select id="hours" name="hours">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+
+          <!-- Members -->
+          <label for="members">How Many People / Members</label>
+          <input id="members" name="members" type="number" min="1" value="1" />
+
+          <!-- Payment Method -->
+          <fieldset>
+            <legend>Payment Method</legend>
+            <label>
+              <input type="radio" name="payment" value="gcash" checked> GCash
+            </label>
+            <label>
+              <input type="radio" name="payment" value="in_person">Cash
+            </label>
+            <label>
+              <input type="radio" name="payment" value="credit_card"> Credit Card
+            </label>
+          </fieldset>
+
+          <!-- Footer / Submit -->
+          <footer>
+            <div>We will contact you to confirm availability.</div>
+            <button class="btn" id="submitBooking">Request Booking</button>
+          </footer>
+        </form>
+
+        <!-- Message -->
+        <div id="bookingMsg" class="msg muted" style="margin-top:12px"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/frontend/public/js/booking/booking.js"></script>
+</body>
+</html>

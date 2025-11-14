@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MixLab | Music Studio</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="assets/icons/favicon.png">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for social icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/landing.css">
+</head>
+<body>
+
+    <!-- ================= HEADER ================= -->
+    <header class="site-header" role="banner">
+        <div class="container">
+
+            <!-- Brand / Logo -->
+            <a href="landing-page.html" class="logo-link" aria-label="MixLab Home">
+                <img src="assets/images/logo.png" height="80" alt="MixLab Logo">
+            </a>
+
+            <!-- Navigation -->
+            <nav class="primary-nav" role="navigation" aria-label="Primary Navigation">
+                <ul class="nav-list">
+                    <li class="nav-item dropdown">
+                        <a href="#services">Services</a>
+                        <ul class="dropdown-menu">
+                            <li><a href="#rehearsal">Rehearsal Space</a></li>
+                            <li><a href="#recording">Recording</a></li>
+                            <li><a href="#lessons">Music Lessons</a></li>
+                            <li><a href="#dance">Dance Studio</a></li>
+                            <li><a href="#arrangement">Music Arrangement</a></li>
+                            <li><a href="#voiceover">Voiceover/Dubbing</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item"><a href="#contact">Support</a></li>
+                    <li class="nav-item"><a href="#about">About</a></li>
+                </ul>
+            </nav>
+
+            <!-- User Account -->
+            <div class="user-actions">
+    <!-- Notification Icon -->
+    <div id="notif-wrapper" class="notif-wrapper" style="display:none;">
+        <i class="fa-solid fa-bell notif-icon"></i>
+        <span id="notif-count" class="notif-count">3</span>
+    </div>
+
+    <!-- Account Name or Login -->
+    <a id="account-link" href="login.html" class="btn-account">Log in</a>
+
+    <!-- Logout Button -->
+    <a id="logout-link" href="#" class="btn-logout" style="display: none;">Logout</a>
+    </div>
+
+
+            <!-- Hamburger -->
+            <button id="menu-toggle" class="hamburger-btn" aria-label="Open Menu">☰</button>
+        </div>
+    </header>
+
+    <!-- ================= SIDEBAR (Mobile) ================= -->
+    <aside id="sidebar" class="sidebar">
+        <button id="sidebar-close" class="close-btn" aria-label="Close Menu">✕</button>
+        <nav class="mobile-nav">
+            <h2>MixLab Music Studio</h2>
+
+            <div class="mobile-menu-section">
+                <div class="mobile-menu-title">
+                    Services <span class="toggle" id="toggle-services">−</span>
+                </div>
+                <ul class="mobile-submenu" id="submenu-services" style="display: block;">
+                    <li><a href="#rehearsal">Rehearsal Space</a></li>
+                    <li><a href="#recording">Recording</a></li>
+                    <li><a href="#lessons">Music Lessons</a></li>
+                    <li><a href="#dance">Dance Studio</a></li>
+                    <li><a href="#arrangement">Music Arrangement</a></li>
+                    <li><a href="#voiceover">Voiceover/Dubbing</a></li>
+                </ul>
+            </div>
+
+            <a href="#contact">Support</a>
+            <a href="#about">About</a>
+            <a href="login.html" class="mobile-account-btn">Log in</a>
+        </nav>
+    </aside>
+
+    <!-- ================= HERO / SLIDER ================= -->
+    <section class="hero-section">
+        <div class="hero-content">
+            <h1>Sound<br>Your Best</h1>
+            <p>
+                Experience the Music on
+                <a href="#">MixLab Music®</a>, 
+                <a href="#">Music Production</a>,      
+                and more,<br>
+                Recording, Rehearsal, and Music Lessons.
+            </p>
+            <div class="hero-arrow">↓</div>
+        </div>
+    </section>
+
+    <!-- ================= ABOUT ================= -->
+    <section id="about" class="about-section">
+        <div class="about-container">
+
+            <div class="about-slider">
+                <div id="slider">
+                    <div class="slides">
+                        <div class="slide"><img src="assets/images/slider1.jpg" alt="Studio Slide 1"></div>
+                        <div class="slide"><img src="assets/images/slider2.jpg" alt="Studio Slide 2"></div>
+                        <div class="slide"><img src="assets/images/slider3.jpg" alt="Studio Slide 3"></div>
+                        <div class="slide"><img src="assets/images/slider4.jpg" alt="Studio Slide 4"></div>
+                        <div class="slide"><img src="assets/images/slider5.jpg" alt="Studio Slide 5"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="about-text">
+                <h1>MixLab Music Studio</h1>
+                <p>
+                    We handle professional-level production for streaming-ready, radio-worthy, and strong tracks!
+                    This is <strong>NOT AI-generated</strong>.
+                </p>
+                <p>
+                    Your song will be produced by real musicians, producers, and arrangers who know how to create the perfect sound.
+                </p>
+                <button class="btn-discover">Discover MixLab</button>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ================= SERVICES ================= -->
+    <section id="services" class="services-section">
+        <h2 class="section-heading">Services</h2>
+        <div class="services-grid">
+            <div class="service-card">
+                <img src="assets/images/slider1.jpg" alt="Music School">
+                <h3>Music lessons</h3>
+                <p>Learn to play, create, and perform.
+                    We offer lessons for all ages and 
+                    skill levels in instruments, vocals, 
+                    songwriting, and music theory.</p>
+            </div>
+            <div class="service-card">
+               <img src="assets/images/recording_studio.jpg" alt="Recording Studio">
+               <h3>Recording Studio</h3>
+               <p>Professional multi-track recording for bands, 
+                    solo artists, and podcasters. Enjoy a creative 
+                    space with high-end gear, fast turnaround, and 
+                    optional analog warmth through tape emulation.</p>
+            </div>
+            <div class="service-card">
+                 <img src="assets/images/slider5.jpg" alt="Band Rehearsal Studio">
+      <h3>Band Rehearsal </h3>
+      <p>Fully equipped rehearsal rooms for bands and 
+        solo performers. Experience high-quality sound,
+        comfortable acoustics, and reliable gear to make 
+        every practice session productive and inspiring.</p>
+            </div>
+        </div>
+
+        <h2 class="section-heading">Studio Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <img src="assets/images/slider4.jpg" alt="Live Room">
+                <h4>Live Room</h4>
+                <p>Spacious acoustic-treated live room with drum riser.</p>
+            </div>
+            <div class="feature-card">
+                <img src="assets/images/music_production.jpg" alt="Control Room">
+                <h4>Control Room</h4>
+                <p>Industry monitors, preamps, and 24-track I/O.</p>
+            </div>
+            <div class="feature-card">
+                <img src="assets/images/slider2.jpg" alt="Dance Studio / Mini-Hall">
+                <h4>Mini hall/Dance Studio</h4>
+                <p>Spacious and well-lit area ideal for 
+                    dance classes, workshops, or small 
+                    performances. Equipped with mirrors,
+                    sound system, and flexible lighting.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= TESTIMONIALS ================= -->
+    <section class="testimonials-section">
+        <div class="container">
+            <h2>What Our Clients Say</h2>
+            <p>Don't just take our word for it — hear from our satisfied customers</p>
+
+            <div class="testimonial-card">
+                <div class="quote">"</div>
+                <div class="stars" id="stars"></div>
+                <p class="testimonial-content" id="testimonial-content"></p>
+                <div class="author">
+                    <div>
+                        <h4 id="testimonial-name"></h4>
+                    </div>
+                </div>
+                <button id="prevBtn" class="testimonial-nav left" aria-label="Previous testimonial">❮</button>
+                <button id="nextBtn" class="testimonial-nav right" aria-label="Next testimonial">❯</button>
+            </div>
+            <div class="testimonial-dots" id="dots"></div>
+        </div>
+    </section>
+
+    <!-- ================= GALLERY ================= -->
+    <section id="gallery" class="gallery-section">
+        <h2>Gallery</h2>
+        <div class="gallery-grid">
+            <img src="assets/images/gallery1.jpg" alt="Studio 1">
+            <img src="assets/images/gallery2.jpg" alt="Studio 2">
+            <img src="assets/images/gallery3.jpg" alt="Studio 3">
+            <img src="assets/images/gallery4.jpg" alt="Live Room">
+        </div>
+    </section>
+
+    <!-- ================= BOOKING ================= -->
+    <aside class="booking-section">
+        <h2>Book a Session</h2>
+        <form id="booking-form">
+            <label for="booking-name">Name</label>
+            <input id="booking-name" type="text" placeholder="Your Name" required>
+            
+            <label for="booking-date">Date</label>
+            <input id="booking-date" type="date" required>
+            
+            <label for="booking-hours">Hours</label>
+            <select id="booking-hours" required>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+            </select>
+            
+            <button type="button" class="btn-submit" id="submit-booking">Request Booking</button>
+        </form>
+        <div id="booking-msg" class="msg-muted"></div>
+    </aside>
+
+    <!-- ================= CONTACT ================= -->
+    <section id="contact" class="contact-section">
+        <div class="contact-form-wrapper">
+            <h2>Get in Touch</h2>
+            <form id="contact-form">
+                <input id="contact-name" type="text" placeholder="Name" required>
+                <input id="contact-email" type="email" placeholder="Email" required>
+                <textarea id="contact-message" rows="4" placeholder="Message" required></textarea>
+                <button type="button" class="btn-submit" id="send-msg">Send</button>
+            </form>
+            <div id="contact-msg" class="msg-muted"></div>
+        </div>
+        
+        <div class="contact-details">
+            <div class="contact-box">
+                <h4>Studio Address</h4>
+                <p>4th Floor Unit 401 RCJ Building Ortigas Extension Countryside Ave. Pasig City, Philippines</p>
+            </div>
+            <div class="contact-box">
+                <h4>Contact Us</h4>
+                <p>
+                    <a href="mailto:mixlabmusicstudios@gmail.com">mixlabmusicstudios@gmail.com</a><br>
+                    <a href="tel:+639665469046">0966 546 9046</a>
+                </p>
+            </div>
+            <div class="contact-box">
+                <h4>Music Studio Operation</h4>
+                <p>Monday – Saturday: 10am – 7pm<br>Sunday: Closed</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="site-footer">
+        <p>© <span id="year"></span> MixLab Studio</p>
+        <p>Professional Music Studio in Pasig</p>
+        <div class="footer-social">
+            <a href="https://www.instagram.com/mixlabmusicstudios.ph" target="_blank" rel="noopener" aria-label="Instagram">
+                <i class="fab fa-instagram"></i>
+            </a>
+            <a href="https://web.facebook.com/mixlabmusicstudios" target="_blank" rel="noopener" aria-label="Facebook">
+                <i class="fab fa-facebook"></i>
+            </a>
+            <a href="https://tiktok.com/@mixlabmusicstudios" target="_blank" rel="noopener" aria-label="TikTok">
+                <i class="fab fa-tiktok"></i>
+            </a>
+        </div>
+    </footer>
+
+    <!-- JS -->
+    <script src="/frontend/public/js/landing.js"></script>
+</body>
+</html>

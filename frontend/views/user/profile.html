@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile - MixLab</title>
+  <link rel="stylesheet" href="/frontend/public/css/profile.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div>
+        <h1 id="displayName">Profile</h1>
+        <div id="email" class="muted"></div>
+      </div>
+      <div>
+        <a id="backHome" class="btn" href="/frontend/public/landing.html">Back</a>
+        <button id="profileLogout" class="btn" style="margin-left:8px;">Logout</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Courses Enrolled</h2>
+      <p class="muted">(placeholder - show enrolled courses here)</p>
+      <ul id="coursesList" class="list">
+        <li>• Intro to Recording (placeholder)</li>
+        <li>• Mixing Basics (placeholder)</li>
+      </ul>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Statistics</h3>
+        <p class="muted">Account statistics for current user</p>
+        <ul class="list">
+          <li>Sessions booked: <strong id="statSessions">0</strong></li>
+          <li>Hours recorded: <strong id="statHours">0</strong></li>
+          <li>Completed courses: <strong id="statCourses">0</strong></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Games Played History</h3>
+        <p class="muted">Recent activity & game results (placeholder)</p>
+        <ul id="gamesList" class="list">
+          <li>• Rhythm Champ - Score: 850 (placeholder)</li>
+          <li>• Ear Training - Score: 720 (placeholder)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="/frontend/public/js/profile.js"></script>
+</body>
+</html>

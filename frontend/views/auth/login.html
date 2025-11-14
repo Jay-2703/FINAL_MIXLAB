@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MixLab Studio | Login</title>
+  <link rel="stylesheet" href="/frontend/public/css/auth.css" />
+</head>
+<body>
+  <div class="wrapper">
+    <div class="login-card">
+      <h1>Login</h1>
+      <p class="subtitle">Sign in to your MixLab Studio account</p>
+
+      <form id="loginForm" class="form" action="/frontend/public/landing.html">
+        <div class="input-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" placeholder="Enter your username" required />
+        </div>
+
+        <div class="input-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Enter your password" required />
+        </div>
+
+        <button type="submit" class="btn-primary">Login</button>
+
+        <a href="forgot_password.html" class="pass-reset">Forgot password?</a>
+
+        <div class="divider"><span>or sign in with</span></div>
+
+        <div class="social-buttons">
+          <button type="button" class="social-btn google">
+            <img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" alt="Google icon" />
+            Google
+          </button>
+          <button type="button" class="social-btn facebook">
+            <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook icon" />
+            Facebook
+          </button>
+        </div>
+
+        <p class="login-text">
+          Don't have an account? <a href="register.html">Register here</a>
+        </p>
+      </form>
+    </div>
+  </div>
+  <script src="login.js"></script>
+</body>
+</html>

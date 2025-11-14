@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MixLab Studio | Register</title>
+  <link rel="stylesheet" href="/frontend/public/css/auth.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  
+  <div class="wrapper">
+    <div class="register-card">
+      <h1>Register</h1>
+      <p class="subtitle">Create your MixLab Studio account</p>
+
+      <form id="registerForm" class="form" action="account-created.html">
+        
+  <div class="input-group">
+    <label for="username">Username</label>
+    <input type="text" id="username" placeholder="Enter your username" required />
+  </div>
+
+
+  <div class="input-row">
+  <div class="input-group">
+    <label for="first">First Name</label>
+    <input id="first" type="text" placeholder="First Name" required />
+  </div>
+  <div class="input-group">
+    <label for="last">Last Name</label>
+    <input id="last" type="text" placeholder="Last Name" required />
+  </div>
+</div>
+
+  <div class="input-group">
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="Enter your email" required />
+  </div>
+
+  <div class="input-row">
+    <div class="input-group">
+      <label for="birthday">Birthday</label>
+      <input type="date" id="birthday" name="birthday" required />
+    </div>
+    <div class="input-group">
+      <label for="contact-number">Contact Number</label>
+      <input type="tel" id="contact_number" placeholder="Enter your Number" required />
+    </div>
+  </div>
+
+  <div class="input-group">
+    <label for="home-address">Home Address</label>
+    <input type="text" id="home-address" placeholder="Enter your home address" />
+  </div>
+
+  <div class="input-row">
+    <div class="input-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Enter your password" required />
+    </div>
+    <div class="input-group">
+      <label for="confirm-password">Confirm Password</label>
+      <input type="password" id="confirm-password" placeholder="Confirm your password" required />
+    </div>
+  </div>
+
+        <button type="submit" class="btn-primary">Register</button>
+
+        <div class="divider"><span>or sign up with</span></div>
+
+
+
+        <div class="social-buttons">
+          <button type="button" class="social-btn google" id="googleSignInBtn">
+            <img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" alt="Google icon" />
+            Google
+          </button>
+          <button type="button" class="social-btn facebook">
+            <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook icon" />
+            Facebook
+          </button>
+        </div>
+
+        <p class="login-text">
+          Already have an account? <a href="login.html">Login here</a>
+        </p>
+      </form>
+    </div>
+  </div>
+  <script src="register.js"></script>
+</body>
+</html>
