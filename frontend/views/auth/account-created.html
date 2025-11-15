@@ -13,10 +13,16 @@
         <h1>Account Registered</h1>
         <p class="subtitle">Your MixLab Studio account has been created.</p>
 
-        <form class="form">
+        <form class="form" onsubmit="event.preventDefault(); window.location.href='login.html';">
           <button type="submit" class="btn-primary">Continue to login</button>
-
         </form>
+        
+        <script>
+          // Auto-redirect after 5 seconds
+          setTimeout(() => {
+            window.location.href = 'login.html';
+          }, 5000);
+        </script>
         
       </div>
     </div>

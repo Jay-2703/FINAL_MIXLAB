@@ -82,18 +82,18 @@ document.addEventListener('DOMContentLoaded', function() {
       verifyEndpoint: '/api/auth/verify-registration-otp',
       resendEndpoint: '/api/auth/resend-registration-otp',
       successMessage: 'Email verified! Completing registration...',
-      redirectUrl: '../Account-created/account-created.html',
-      backUrl: '../Register/register.html',
+      redirectUrl: 'account-created.html',
+      backUrl: 'register.html',
       saveToken: true
     },
     forgot: {
       title: 'Verify OTP',
       subtitle: 'Enter the OTP sent to reset your password',
-      verifyEndpoint: '/api/auth/verify-otp',
+      verifyEndpoint: '/api/auth/verify-reset-otp',
       resendEndpoint: '/api/auth/resend-otp',
       successMessage: 'OTP verified! Redirecting to set new password...',
-      redirectUrl: '../New-password/new-password.html',
-      backUrl: '../Forgot-password/forgot-password.html',
+      redirectUrl: 'reset_password.html',
+      backUrl: 'forgot_password.html',
       saveToken: false
     }
   };
@@ -132,7 +132,10 @@ document.addEventListener('DOMContentLoaded', function() {
       console.log(`Sending OTP verification to: ${config.verifyEndpoint}`);
       console.log('Request body:', requestBody);
 
-      const response = await fetch(`http://localhost:5000${config.verifyEndpoint}`, {
+      // API Base URL
+      const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000';
+      
+      const response = await fetch(`${API_BASE_URL}${config.verifyEndpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody)
@@ -151,10 +154,14 @@ document.addEventListener('DOMContentLoaded', function() {
           if (result.user) {
             localStorage.setItem('user', JSON.stringify(result.user));
           }
+          // Clear session storage for registration
+          sessionStorage.removeItem('otpData');
+        } else if (type === 'forgot') {
+          // For forgot password flow, store OTP in session for reset password step
+          const currentOtpData = JSON.parse(sessionStorage.getItem('otpData') || '{}');
+          currentOtpData.otp = otp; // Store verified OTP
+          sessionStorage.setItem('otpData', JSON.stringify(currentOtpData));
         }
-
-        // Clear session storage
-        sessionStorage.removeItem('otpData');
 
         // Redirect after a short delay
         setTimeout(() => {
@@ -174,7 +181,10 @@ document.addEventListener('DOMContentLoaded', function() {
     e.preventDefault();
 
     try {
-      const response = await fetch(`http://localhost:5000${config.resendEndpoint}`, {
+      // API Base URL
+      const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000';
+      
+      const response = await fetch(`${API_BASE_URL}${config.resendEndpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Example - MixLab Studio</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        .disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        #messages {
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Socket.IO Client Example</h1>
+    
+    <div id="status" class="status disconnected">Disconnected</div>
+    
+    <div>
+        <button onclick="connectSocket()">Connect</button>
+        <button onclick="disconnectSocket()">Disconnect</button>
+        <button onclick="subscribePayments()">Subscribe to Payments</button>
+        <button onclick="testNotification()">Test Notification</button>
+    </div>
+    
+    <h2>Messages:</h2>
+    <div id="messages"></div>
+
+    <!-- Socket.IO Client Library -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    
+    <!-- Our Socket Client -->
+    <script src="js/socket-client.js"></script>
+    
+    <script>
+        let socket = null;
+        
+        function addMessage(message, type = 'info') {
+            const messagesDiv = document.getElementById('messages');
+            const messageEl = document.createElement('div');
+            messageEl.innerHTML = `<strong>[${new Date().toLocaleTimeString()}]</strong> ${message}`;
+            messagesDiv.appendChild(messageEl);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function updateStatus(connected) {
+            const statusDiv = document.getElementById('status');
+            if (connected) {
+                statusDiv.textContent = 'Connected';
+                statusDiv.className = 'status connected';
+            } else {
+                statusDiv.textContent = 'Disconnected';
+                statusDiv.className = 'status disconnected';
+            }
+        }
+        
+        function connectSocket() {
+            const token = localStorage.getItem('token');
+            
+            // Use our SocketClient class
+            socketClient.onConnect = () => {
+                updateStatus(true);
+                addMessage('✅ Connected to server', 'success');
+            };
+            
+            socketClient.onDisconnect = (reason) => {
+                updateStatus(false);
+                addMessage(`❌ Disconnected: ${reason}`, 'error');
+            };
+            
+            socketClient.onAuthenticated = (user) => {
+                addMessage(`✅ Authenticated as: ${user.username}`, 'success');
+            };
+            
+            socketClient.onPaymentUpdate = (data) => {
+                addMessage(`💳 Payment update: ${JSON.stringify(data)}`, 'payment');
+            };
+            
+            socketClient.onNotification = (data) => {
+                addMessage(`📨 Notification: ${data.title || data.message}`, 'notification');
+                // You can show a toast notification here
+            };
+            
+            socketClient.onError = (error) => {
+                addMessage(`⚠️ Error: ${error.message}`, 'error');
+            };
+            
+            socketClient.connect(token);
+            addMessage('🔄 Connecting...', 'info');
+        }
+        
+        function disconnectSocket() {
+            socketClient.disconnect();
+            updateStatus(false);
+            addMessage('Disconnected manually', 'info');
+        }
+        
+        function subscribePayments() {
+            socketClient.subscribeToPayments();
+            addMessage('📡 Subscribed to payment updates', 'info');
+        }
+        
+        function testNotification() {
+            // This would typically be sent from the server
+            addMessage('📨 Test notification received', 'notification');
+        }
+        
+        // Auto-connect on page load if token exists
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                addMessage('Token found, ready to connect', 'info');
+            } else {
+                addMessage('No token found. Please login first.', 'warning');
+            }
+        });
+    </script>
+</body>
+</html>
+

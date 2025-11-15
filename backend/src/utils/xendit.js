@@ -1,5 +1,7 @@
-const axios = require('axios');
-require('dotenv').config();
+import axios from 'axios';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const XENDIT_API_URL = 'https://api.xendit.co/v2';
 const XENDIT_SECRET_KEY = process.env.XENDIT_SECRET_KEY;
@@ -107,7 +109,7 @@ function verifyWebhookToken(token) {
   return token === process.env.XENDIT_WEBHOOK_TOKEN;
 }
 
-module.exports = {
+export {
   createInvoice,
   createGCashQR,
   getInvoiceStatus,
