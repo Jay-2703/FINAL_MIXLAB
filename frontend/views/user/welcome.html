@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome - MixLab Studio</title>
+  <link rel="stylesheet" href="/frontend/public/css/music_lesson.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    .welcome-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    .welcome-title {
+      font-size: 48px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 20px;
+    }
+    .welcome-subtitle {
+      font-size: 20px;
+      color: #666;
+      margin-bottom: 50px;
+    }
+    .mode-selection {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      margin-top: 40px;
+    }
+    .mode-card {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: transform 0.3s, box-shadow 0.3s;
+      border: 3px solid transparent;
+    }
+    .mode-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+      border-color: #667eea;
+    }
+    .mode-icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+    }
+    .mode-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 15px;
+    }
+    .mode-description {
+      font-size: 16px;
+      color: #666;
+      line-height: 1.6;
+    }
+    .play-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .play-card .mode-title,
+    .play-card .mode-description {
+      color: white;
+    }
+    .learn-card {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+    .learn-card .mode-title,
+    .learn-card .mode-description {
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="welcome-container">
+    <h1 class="welcome-title">🎵 Welcome to MixLab Studio</h1>
+    <p class="welcome-subtitle">Choose your learning path</p>
+
+    <div class="mode-selection">
+      <div class="mode-card play-card" onclick="goToPlay()">
+        <div class="mode-icon">🎮</div>
+        <div class="mode-title">Play</div>
+        <div class="mode-description">
+          Test your skills with interactive quizzes and games. Earn points, unlock achievements, and compete with yourself!
+        </div>
+      </div>
+
+      <div class="mode-card learn-card" onclick="goToLearn()">
+        <div class="mode-icon">📚</div>
+        <div class="mode-title">Learn</div>
+        <div class="mode-description">
+          Study at your own pace with comprehensive lessons. Watch videos, read content, and master your favorite instruments.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function goToPlay() {
+      window.location.href = '/frontend/views/user/play.html';
+    }
+
+    function goToLearn() {
+      window.location.href = '/frontend/views/user/lessons.html';
+    }
+  </script>
+</body>
+</html>
+

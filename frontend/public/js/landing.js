@@ -119,7 +119,7 @@ function initAuth() {
   const bookingForm = document.getElementById('booking-form');
   const submitBooking = document.getElementById('submit-booking');
   const bookingName = document.getElementById('booking-name');
-  const bookingDate = document.getElementById('booking-date');
+  const bookingBirthday = document.getElementById('booking-birthday');
   const bookingHours = document.getElementById('booking-hours');
   const bookingMsg = document.getElementById('booking-msg');
 
@@ -129,7 +129,7 @@ function initAuth() {
     if (pendingBooking) {
       const data = JSON.parse(pendingBooking);
       if (bookingName && data.name) bookingName.value = data.name;
-      if (bookingDate && data.date) bookingDate.value = data.date;
+      if (bookingBirthday && data.birthday) bookingBirthday.value = data.birthday;
       if (bookingHours && data.hours) bookingHours.value = data.hours;
     }
   } catch (err) {
@@ -141,45 +141,41 @@ function initAuth() {
     submitBooking.addEventListener('click', async (e) => {
       e.preventDefault();
 
-      const bookingData = {
-        name: bookingName?.value || '',
-        date: bookingDate?.value || '',
-        hours: bookingHours?.value || '1'
-      };
-
-      // Check if user is logged in
-      const user = localStorage.getItem('user');
-
-      if (!user) {
-        // Save booking data and redirect to login
-        sessionStorage.setItem('pendingBooking', JSON.stringify(bookingData));
-        window.location.href = 'login.html';
+      // Validation
+      if (!bookingName?.value || !bookingBirthday?.value || !bookingHours?.value) {
+        if (bookingMsg) {
+          bookingMsg.textContent = 'Please fill in all fields';
+          bookingMsg.style.color = 'red';
+        }
         return;
       }
 
-      // Submit booking
+      const bookingData = {
+        name: bookingName.value.trim(),
+        birthday: bookingBirthday.value,
+        hours: bookingHours.value
+      };
+
+      // Validate birthday (must be in the past)
+      const birthdayDate = new Date(bookingData.birthday);
+      const today = new Date();
+      if (birthdayDate >= today) {
+        if (bookingMsg) {
+          bookingMsg.textContent = 'Birthday must be in the past';
+          bookingMsg.style.color = 'red';
+        }
+        return;
+      }
+
+      // Save to sessionStorage and redirect to main booking page
       try {
-        const response = await fetch('http://localhost:3000/api/bookings', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(bookingData)
-        });
-
-        const result = await response.json();
-        
-        if (bookingMsg) {
-          bookingMsg.textContent = result.message || (response.ok ? 'Booking requested successfully!' : 'Error submitting booking');
-          bookingMsg.style.color = response.ok ? 'green' : 'red';
-        }
-
-        if (response.ok) {
-          sessionStorage.removeItem('pendingBooking');
-          bookingForm?.reset();
-        }
+        sessionStorage.setItem('pendingBooking', JSON.stringify(bookingData));
+        // Redirect to main booking page
+        window.location.href = '/frontend/views/user/booking.html';
       } catch (error) {
-        console.error('Booking error:', error);
+        console.error('Error saving booking data:', error);
         if (bookingMsg) {
-          bookingMsg.textContent = 'Network error. Please try again.';
+          bookingMsg.textContent = 'Error saving booking data. Please try again.';
           bookingMsg.style.color = 'red';
         }
       }

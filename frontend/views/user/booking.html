@@ -3,82 +3,237 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Booking</title>
-  <link rel="stylesheet" href="/frontend/public/css/">
+  <title>Book Studio Session - MixLab Studio</title>
+  <link rel="stylesheet" href="/frontend/public/css/auth.css">
+  <style>
+    .booking-container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 30px;
+    }
+    .form-section {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .form-section h3 {
+      margin-top: 0;
+      color: #667eea;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    @media (max-width: 768px) {
+      .input-row {
+        grid-template-columns: 1fr;
+      }
+    }
+    .payment-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .payment-option {
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .payment-option:hover {
+      border-color: #667eea;
+      background: #f8f9ff;
+    }
+    .payment-option.selected {
+      border-color: #667eea;
+      background: #667eea;
+      color: white;
+    }
+    .payment-option input[type="radio"] {
+      display: none;
+    }
+    .time-slots {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .time-slot {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .time-slot:hover {
+      border-color: #667eea;
+    }
+    .time-slot.available {
+      background: #d4edda;
+    }
+    .time-slot.unavailable {
+      background: #f8d7da;
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    .time-slot.selected {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+    .amount-display {
+      background: #f8f9ff;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+      text-align: right;
+    }
+    .amount-display .total {
+      font-size: 24px;
+      font-weight: bold;
+      color: #667eea;
+    }
+  </style>
 </head>
-<body class="booking-page">
+<body>
+  <div class="wrapper">
+    <div class="booking-container">
+      <h1>Book Your Studio Session</h1>
+      <p class="subtitle">Complete your booking details and select payment method</p>
 
-  <main style="max-width: 900px; margin: 28px auto;">
-    <section id="booking" class="booking-section">
-      <div class="card">
-        <h2 class="subheading">Request a Studio Booking</h2>
+      <form id="bookingForm">
+        <!-- Personal Information Section -->
+        <div class="form-section">
+          <h3>Personal Information</h3>
+          
+          <div class="input-group">
+            <label for="name">Full Name *</label>
+            <input type="text" id="name" name="name" placeholder="Your full name" required />
+          </div>
 
-        <form id="bookingForm" class="booking" onsubmit="return false;">
-          <!-- Full Name -->
-          <label for="name">Full Name</label>
-          <input id="name" name="name" placeholder="Your full name" required />
+          <div class="input-row">
+            <div class="input-group">
+              <label for="email">Email *</label>
+              <input type="email" id="email" name="email" placeholder="your.email@example.com" required />
+            </div>
+            <div class="input-group">
+              <label for="contact">Contact Number *</label>
+              <input type="tel" id="contact" name="contact" placeholder="+63 9XX XXX XXXX" required />
+            </div>
+          </div>
 
-          <!-- Address -->
-          <label for="address">Address</label>
-          <input id="address" name="address" placeholder="Home / Billing address" />
+          <div class="input-row">
+            <div class="input-group">
+              <label for="birthday">Birthday *</label>
+              <input type="date" id="birthday" name="birthday" required />
+            </div>
+            <div class="input-group">
+              <label for="homeAddress">Home Address</label>
+              <input type="text" id="homeAddress" name="homeAddress" placeholder="Your address" />
+            </div>
+          </div>
+        </div>
 
-          <!-- Service Type -->
-          <label for="serviceType">Service Type</label>
-          <select id="serviceType" name="serviceType" required>
-            <option value="">Select service</option>
-            <option value="music_lesson">Music Lesson</option>
-            <option value="recording">Recording</option>
-            <option value="rehearsal">Rehearsal</option>
-          </select>
+        <!-- Booking Details Section -->
+        <div class="form-section">
+          <h3>Booking Details</h3>
 
-          <!-- Date -->
-          <label for="date">Date</label>
-          <input id="date" name="date" type="date" required />
+          <div class="input-group">
+            <label for="serviceType">Service Type *</label>
+            <select id="serviceType" name="serviceType" required>
+              <option value="">Select a service</option>
+              <option value="music_lesson">Music Lesson (₱500/hour)</option>
+              <option value="recording">Recording Studio (₱1,500/hour)</option>
+              <option value="rehearsal">Band Rehearsal (₱800/hour)</option>
+              <option value="dance">Dance Studio (₱600/hour)</option>
+              <option value="arrangement">Music Arrangement (₱2,000/hour)</option>
+              <option value="voiceover">Voiceover/Dubbing (₱1,000/hour)</option>
+            </select>
+          </div>
 
-          <!-- Time -->
-          <label for="time">Time</label>
-          <input id="time" name="time" type="time" required />
+          <div class="input-row">
+            <div class="input-group">
+              <label for="bookingDate">Booking Date *</label>
+              <input type="date" id="bookingDate" name="bookingDate" required min="" />
+            </div>
+            <div class="input-group">
+              <label for="hours">Number of Hours *</label>
+              <select id="hours" name="hours" required>
+                <option value="1">1 Hour</option>
+                <option value="2">2 Hours</option>
+                <option value="3">3 Hours</option>
+                <option value="4">4 Hours</option>
+              </select>
+            </div>
+          </div>
 
-          <!-- Hours -->
-          <label for="hours">Hours</label>
-          <select id="hours" name="hours">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-          </select>
+          <div class="input-group">
+            <label for="bookingTime">Booking Time *</label>
+            <input type="time" id="bookingTime" name="bookingTime" required />
+            <small style="color: #666; margin-top: 5px; display: block;">
+              Available slots will be shown after selecting date and hours
+            </small>
+            <div id="timeSlots" class="time-slots" style="display: none;"></div>
+          </div>
 
-          <!-- Members -->
-          <label for="members">How Many People / Members</label>
-          <input id="members" name="members" type="number" min="1" value="1" />
+          <div class="input-group">
+            <label for="members">Number of People</label>
+            <input type="number" id="members" name="members" min="1" value="1" />
+          </div>
+        </div>
 
-          <!-- Payment Method -->
-          <fieldset>
-            <legend>Payment Method</legend>
-            <label>
-              <input type="radio" name="payment" value="gcash" checked> GCash
+        <!-- Payment Method Section -->
+        <div class="form-section">
+          <h3>Payment Method</h3>
+          <div class="payment-options">
+            <label class="payment-option" data-payment="gcash">
+              <input type="radio" name="paymentMethod" value="gcash" required />
+              <div>💳 GCash</div>
             </label>
-            <label>
-              <input type="radio" name="payment" value="in_person">Cash
+            <label class="payment-option" data-payment="credit_card">
+              <input type="radio" name="paymentMethod" value="credit_card" required />
+              <div>💳 Credit Card</div>
             </label>
-            <label>
-              <input type="radio" name="payment" value="credit_card"> Credit Card
+            <label class="payment-option" data-payment="debit_card">
+              <input type="radio" name="paymentMethod" value="debit_card" required />
+              <div>💳 Debit Card</div>
             </label>
-          </fieldset>
+            <label class="payment-option" data-payment="cash">
+              <input type="radio" name="paymentMethod" value="cash" required />
+              <div>💰 Cash (Pay on Arrival)</div>
+            </label>
+          </div>
+        </div>
 
-          <!-- Footer / Submit -->
-          <footer>
-            <div>We will contact you to confirm availability.</div>
-            <button class="btn" id="submitBooking">Request Booking</button>
-          </footer>
-        </form>
+        <!-- Amount Display -->
+        <div class="amount-display">
+          <div>Subtotal: <span id="subtotal">₱0.00</span></div>
+          <div class="total">Total: <span id="total">₱0.00</span></div>
+        </div>
 
-        <!-- Message -->
-        <div id="bookingMsg" class="msg muted" style="margin-top:12px"></div>
-      </div>
-    </section>
-  </main>
+        <!-- Submit Button -->
+        <button type="submit" class="btn-primary" id="submitBooking" style="width: 100%; margin-top: 20px;">
+          Continue to Payment
+        </button>
 
+        <div id="bookingMsg" style="margin-top: 15px; text-align: center;"></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Set minimum date to today
+    document.getElementById('bookingDate').min = new Date().toISOString().split('T')[0];
+  </script>
   <script src="/frontend/public/js/booking/booking.js"></script>
 </body>
 </html>

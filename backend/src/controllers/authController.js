@@ -3,6 +3,7 @@ import { hashPassword, comparePassword, validatePasswordStrength } from '../util
 import { generateToken } from '../utils/jwt.js';
 import otpService from '../services/otpService.js';
 import { trackFailedLoginAttempt, checkAccountLock, resetFailedLoginAttempts } from '../middleware/security.js';
+import { notifyAdmins } from '../services/notificationService.js';
 
 /**
  * Authentication Controller
@@ -130,6 +131,18 @@ export const verifyRegistrationOTP = async (req, res) => {
     });
 
     await connection.commit();
+
+    // Notify admins about new user registration
+    try {
+      await notifyAdmins(
+        'user',
+        `New user registered: ${user.first_name} ${user.last_name} (${user.email})`,
+        `/frontend/views/admin/users.html`
+      );
+    } catch (notifError) {
+      console.error('Error sending registration notification:', notifError);
+      // Don't fail registration if notification fails
+    }
 
     // Set HTTP-only cookie
     res.cookie('token', token, {

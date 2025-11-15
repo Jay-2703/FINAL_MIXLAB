@@ -9,6 +9,11 @@ import { fileURLToPath } from 'url';
 
 // Import routes
 import authRoutes from './src/routes/authRoutes.js';
+import bookingRoutes from './src/routes/bookingRoutes.js';
+import webhookRoutes from './src/routes/webhookRoutes.js';
+import lessonRoutes from './src/routes/lessonRoutes.js';
+import quizRoutes from './src/routes/quizRoutes.js';
+import adminRoutes from './src/routes/adminRoutes.js';
 // import paymentRoutes from './routes/paymentRoutes.js'; // Uncomment if payment routes exist
 
 // Import Socket.IO configuration
@@ -52,6 +57,11 @@ app.use(express.static(frontendPath));
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/webhooks', webhookRoutes);
+app.use('/api/lessons', lessonRoutes);
+app.use('/api/quiz', quizRoutes);
+app.use('/api/admin', adminRoutes);
 // app.use('/api/payments', paymentRoutes); // Uncomment if payment routes exist
 
 // Health check

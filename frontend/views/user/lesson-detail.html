@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson - MixLab Studio</title>
+  <link rel="stylesheet" href="/frontend/public/css/music_lesson.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    .lesson-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .lesson-header {
+      margin-bottom: 30px;
+    }
+    .lesson-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .lesson-meta {
+      color: #666;
+      font-size: 14px;
+    }
+    .lesson-content {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .youtube-container {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+      margin: 20px 0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .youtube-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .lesson-text {
+      line-height: 1.8;
+      color: #333;
+      margin: 20px 0;
+    }
+    .lesson-images {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .lesson-image {
+      width: 100%;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .audio-player {
+      margin: 20px 0;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+    .complete-button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 20px;
+      transition: transform 0.2s;
+    }
+    .complete-button:hover:not(:disabled) {
+      transform: scale(1.02);
+    }
+    .complete-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .complete-button.completed {
+      background: #28a745;
+    }
+    .points-earned {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 18px;
+      color: #667eea;
+      font-weight: 600;
+    }
+    .achievement-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      z-index: 1000;
+      text-align: center;
+      display: none;
+      animation: popIn 0.5s;
+    }
+    @keyframes popIn {
+      from {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0;
+      }
+      to {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+    }
+    .achievement-icon {
+      font-size: 64px;
+      margin-bottom: 15px;
+      animation: sparkle 1s infinite;
+    }
+    @keyframes sparkle {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      50% { transform: scale(1.2) rotate(180deg); }
+    }
+    .back-button {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .back-button:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="lesson-container">
+    <a href="/frontend/views/user/lessons.html" class="back-button">← Back to Lessons</a>
+    
+    <div class="lesson-header">
+      <div class="lesson-title" id="lessonTitle">Loading...</div>
+      <div class="lesson-meta" id="lessonMeta"></div>
+    </div>
+
+    <div class="lesson-content">
+      <!-- YouTube Video -->
+      <div id="youtubeContainer" class="youtube-container" style="display: none;"></div>
+
+      <!-- Lesson Text Content -->
+      <div class="lesson-text" id="lessonContent"></div>
+
+      <!-- Images -->
+      <div class="lesson-images" id="lessonImages"></div>
+
+      <!-- Audio Player -->
+      <div class="audio-player" id="audioPlayer" style="display: none;">
+        <audio controls style="width: 100%;">
+          <source id="audioSource" src="" type="audio/mpeg">
+          Your browser does not support the audio element.
+        </audio>
+      </div>
+
+      <!-- Complete Button -->
+      <button class="complete-button" id="completeButton" onclick="completeLesson()">
+        Mark as Complete
+      </button>
+      <div class="points-earned" id="pointsEarned" style="display: none;"></div>
+    </div>
+  </div>
+
+  <!-- Achievement Popup -->
+  <div class="achievement-popup" id="achievementPopup">
+    <div class="achievement-icon" id="achievementIcon">🌟</div>
+    <h2 id="achievementName">Achievement Unlocked!</h2>
+    <p id="achievementDescription"></p>
+    <button onclick="closeAchievementPopup()" style="margin-top: 20px; padding: 10px 30px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;">
+      Awesome!
+    </button>
+  </div>
+
+  <script>
+    const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000';
+    let currentLesson = null;
+    let isCompleted = false;
+    let youtubePlayer = null;
+
+    // Get URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const instrument = urlParams.get('instrument');
+    const moduleId = urlParams.get('module');
+    const moduleName = urlParams.get('moduleName');
+    const lessonId = urlParams.get('lesson');
+
+    // Load lesson
+    async function loadLesson() {
+      if (!lessonId) {
+        // Load module lessons and show first one
+        await loadModuleLessons();
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/lessons/lesson/${lessonId}`);
+        const result = await response.json();
+
+        if (result.success) {
+          currentLesson = result.data;
+          displayLesson(result.data);
+          checkCompletion();
+        }
+      } catch (error) {
+        console.error('Error loading lesson:', error);
+      }
+    }
+
+    async function loadModuleLessons() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/lessons/modules/${instrument}/${moduleId}`);
+        const result = await response.json();
+
+        if (result.success && result.data.lessons.length > 0) {
+          // Redirect to first lesson
+          const firstLesson = result.data.lessons[0];
+          window.location.href = `/frontend/views/user/lesson-detail.html?instrument=${encodeURIComponent(instrument)}&module=${moduleId}&moduleName=${encodeURIComponent(moduleName)}&lesson=${firstLesson.id}`;
+        }
+      } catch (error) {
+        console.error('Error loading module lessons:', error);
+      }
+    }
+
+    function displayLesson(lesson) {
+      document.getElementById('lessonTitle').textContent = lesson.title;
+      document.getElementById('lessonMeta').textContent = `${lesson.instrument_name} - ${lesson.module_name} (Level ${lesson.level})`;
+
+      // Display content
+      if (lesson.content) {
+        document.getElementById('lessonContent').innerHTML = lesson.content.replace(/\n/g, '<br>');
+      }
+
+      // Display YouTube video
+      if (lesson.youtube_video_id) {
+        const container = document.getElementById('youtubeContainer');
+        container.style.display = 'block';
+        container.innerHTML = `
+          <iframe 
+            src="https://www.youtube.com/embed/${lesson.youtube_video_id}?enablejsapi=1" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen
+            id="youtubeIframe">
+          </iframe>
+        `;
+
+        // Auto-complete when video ends (optional)
+        setupYouTubeAutoComplete();
+      }
+
+      // Display images
+      if (lesson.images && lesson.images.length > 0) {
+        const imagesContainer = document.getElementById('lessonImages');
+        imagesContainer.innerHTML = lesson.images.map(img => 
+          `<img src="${img}" alt="Lesson image" class="lesson-image" />`
+        ).join('');
+      }
+
+      // Display audio
+      if (lesson.audio_url) {
+        const audioPlayer = document.getElementById('audioPlayer');
+        audioPlayer.style.display = 'block';
+        document.getElementById('audioSource').src = lesson.audio_url;
+      }
+    }
+
+    function setupYouTubeAutoComplete() {
+      // YouTube API would be needed for this
+      // For now, we'll just track when user manually completes
+    }
+
+    async function checkCompletion() {
+      const token = localStorage.getItem('token');
+      if (!token || !currentLesson) return;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/lessons/progress`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          const completedIds = result.data.completedLessonsList.map(l => l.lesson_id);
+          
+          if (completedIds.includes(currentLesson.id)) {
+            isCompleted = true;
+            const button = document.getElementById('completeButton');
+            button.textContent = '✓ Lesson Completed';
+            button.classList.add('completed');
+            button.disabled = true;
+          }
+        }
+      } catch (error) {
+        console.error('Error checking completion:', error);
+      }
+    }
+
+    async function completeLesson() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please login to mark lessons as complete');
+        window.location.href = '/frontend/views/auth/login.html';
+        return;
+      }
+
+      if (!currentLesson || isCompleted) return;
+
+      const button = document.getElementById('completeButton');
+      button.disabled = true;
+      button.textContent = 'Completing...';
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/lessons/complete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ lessonId: currentLesson.id })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          isCompleted = true;
+          button.textContent = '✓ Lesson Completed';
+          button.classList.add('completed');
+
+          // Show points earned
+          document.getElementById('pointsEarned').style.display = 'block';
+          document.getElementById('pointsEarned').textContent = `+${result.data.pointsEarned} points earned!`;
+
+          // Show achievements if any
+          if (result.data.achievements && result.data.achievements.length > 0) {
+            result.data.achievements.forEach(achievement => {
+              showAchievementPopup(achievement);
+            });
+          }
+
+          // Update progress in parent page if exists
+          if (window.opener) {
+            window.opener.loadUserProgress();
+          }
+        } else {
+          alert(result.message || 'Failed to complete lesson');
+          button.disabled = false;
+          button.textContent = 'Mark as Complete';
+        }
+      } catch (error) {
+        console.error('Error completing lesson:', error);
+        alert('Network error. Please try again.');
+        button.disabled = false;
+        button.textContent = 'Mark as Complete';
+      }
+    }
+
+    function showAchievementPopup(achievement) {
+      document.getElementById('achievementIcon').textContent = achievement.icon || '🌟';
+      document.getElementById('achievementName').textContent = achievement.name;
+      document.getElementById('achievementDescription').textContent = achievement.description || '';
+      document.getElementById('achievementPopup').style.display = 'block';
+    }
+
+    function closeAchievementPopup() {
+      document.getElementById('achievementPopup').style.display = 'none';
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      loadLesson();
+    });
+  </script>
+</body>
+</html>
+

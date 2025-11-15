@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MixLab Admin - Dashboard</title>
+  <link rel="stylesheet" href="/frontend/public/css/admin/admin.css">
+  <link rel="stylesheet" href="/frontend/public/css/admin/notifications.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body class="admin-body">
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🎵</div>
+      <span class="logo-text">MixLab Admin</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/frontend/views/admin/dashboard.html" class="nav-item active">
+        <i class="fas fa-chart-line"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="/frontend/views/admin/users.html" class="nav-item">
+        <i class="fas fa-users"></i>
+        <span>Users</span>
+      </a>
+      <a href="/frontend/views/admin/instructors.html" class="nav-item">
+        <i class="fas fa-chalkboard-teacher"></i>
+        <span>Instructors</span>
+      </a>
+      <a href="/frontend/views/admin/appointments.html" class="nav-item">
+        <i class="fas fa-calendar-alt"></i>
+        <span>Appointments</span>
+      </a>
+      <a href="/frontend/views/admin/modules.html" class="nav-item">
+        <i class="fas fa-book"></i>
+        <span>Modules & Lessons</span>
+      </a>
+      <a href="/frontend/views/admin/quizzes.html" class="nav-item">
+        <i class="fas fa-question-circle"></i>
+        <span>Quizzes</span>
+      </a>
+      <a href="/frontend/views/admin/analytics.html" class="nav-item">
+        <i class="fas fa-chart-bar"></i>
+        <span>Analytics</span>
+      </a>
+      <a href="/frontend/views/admin/gamification.html" class="nav-item">
+        <i class="fas fa-trophy"></i>
+        <span>Gamification</span>
+      </a>
+      <a href="/frontend/views/admin/settings.html" class="nav-item">
+        <i class="fas fa-cog"></i>
+        <span>Settings</span>
+      </a>
+    </nav>
+    <button class="sidebar-logout" id="logoutBtn">
+      <i class="fas fa-sign-out-alt"></i>
+      <span>Logout</span>
+    </button>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="admin-main">
+    <!-- Header -->
+    <header class="admin-header">
+      <div class="header-left">
+        <h1 class="welcome-text">Welcome back, Admin!</h1>
+      </div>
+      <div class="header-right">
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Search...">
+        </div>
+        <div class="notification-bell" id="notificationBell">
+          <i class="fas fa-bell"></i>
+          <span class="badge" id="notificationBadge" style="display: none;">0</span>
+        </div>
+        <div class="notification-dropdown" id="notificationDropdown">
+          <div class="notification-header">
+            <h3>Notifications</h3>
+            <div class="notification-actions">
+              <button class="btn-mark-all-read" onclick="markAllAsRead()">Mark all read</button>
+            </div>
+          </div>
+          <div class="notification-list" id="notificationList">
+            <!-- Dynamic content -->
+          </div>
+        </div>
+        <div class="user-avatar" id="userAvatar">A</div>
+      </div>
+    </header>
+
+    <!-- Dashboard Content -->
+    <div class="dashboard-content">
+      <!-- Metric Cards Row 1 -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-icon users">
+            <i class="fas fa-users"></i>
+          </div>
+          <div class="metric-info">
+            <div class="metric-value" id="totalUsers">2,847</div>
+            <div class="metric-label">Total Users</div>
+            <div class="metric-change positive" id="userGrowth">+12.5% from last month</div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon appointments">
+            <i class="fas fa-calendar"></i>
+          </div>
+          <div class="metric-info">
+            <div class="metric-value" id="totalAppointments">156</div>
+            <div class="metric-label">Appointments Booked</div>
+            <div class="metric-change positive" id="appointmentGrowth">+8.2% from last week</div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon lessons">
+            <i class="fas fa-book-open"></i>
+          </div>
+          <div class="metric-info">
+            <div class="metric-value" id="completedLessons">24</div>
+            <div class="metric-label">Completed lessons</div>
+            <div class="metric-change positive" id="newLessons">4 new this month</div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon revenue">
+            <i class="fas fa-wallet"></i>
+          </div>
+          <div class="metric-info">
+            <div class="metric-value" id="monthlyRevenue">$45.8K</div>
+            <div class="metric-label">Monthly Revenue</div>
+            <div class="metric-change positive" id="revenueGrowth">+15.3% from last month</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Metric Card Row 2 -->
+      <div class="metrics-grid single">
+        <div class="metric-card">
+          <div class="metric-icon engagement">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <div class="metric-info">
+            <div class="metric-value" id="engagementRate">87.4%</div>
+            <div class="metric-label">Engagement Rate</div>
+            <div class="metric-change positive" id="engagementGrowth">+3.1% from last week</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3 class="chart-title">Revenue Trends</h3>
+          <canvas id="revenueChart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3 class="chart-title">User Engagement</h3>
+          <canvas id="engagementChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Bottom Section -->
+      <div class="bottom-grid">
+        <!-- Appointments Panel -->
+        <div class="panel-card">
+          <h3 class="panel-title">Upcoming Appointments</h3>
+          <div class="appointments-list" id="appointmentsList">
+            <!-- Dynamic content -->
+          </div>
+        </div>
+
+        <!-- Calendar & Recent Users -->
+        <div class="right-column">
+          <div class="panel-card">
+            <h3 class="panel-title">Calendar</h3>
+            <div class="calendar-container" id="dashboardCalendar">
+              <!-- Calendar will be generated by JS -->
+            </div>
+            <div class="calendar-controls">
+              <button id="dashboardPrevMonth"><i class="fas fa-chevron-left"></i></button>
+              <span id="calendarMonthYear"></span>
+              <button id="dashboardNextMonth"><i class="fas fa-chevron-right"></i></button>
+            </div>
+          </div>
+
+          <div class="panel-card">
+            <h3 class="panel-title">Recent Users</h3>
+            <div class="recent-users-table" id="recentUsersTable">
+              <!-- Dynamic content -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/frontend/public/js/admin/admin-common.js"></script>
+  <script src="/frontend/public/js/admin/notifications.js"></script>
+  <script src="/frontend/public/js/admin/dashboard.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Play - MixLab Studio</title>
+  <link rel="stylesheet" href="/frontend/public/css/music_lesson.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    .play-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .back-button {
+      display: inline-block;
+      margin-bottom: 20px;
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .back-button:hover {
+      text-decoration: underline;
+    }
+    .instruments-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin: 30px 0;
+    }
+    .instrument-card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: transform 0.3s, box-shadow 0.3s;
+      text-align: center;
+    }
+    .instrument-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 12px rgba(0,0,0,0.15);
+    }
+    .instrument-icon {
+      font-size: 64px;
+      margin-bottom: 15px;
+    }
+    .instrument-name {
+      font-size: 24px;
+      font-weight: 700;
+      color: #667eea;
+    }
+    .levels-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin: 30px 0;
+    }
+    .level-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 30px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.3s;
+      font-weight: 700;
+      font-size: 20px;
+    }
+    .level-card:hover {
+      transform: scale(1.05);
+    }
+    .section-title {
+      font-size: 32px;
+      font-weight: 700;
+      margin: 30px 0 20px 0;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="play-container">
+    <a href="/frontend/views/user/welcome.html" class="back-button">← Back to Welcome</a>
+    
+    <h1>🎮 Play Mode</h1>
+    <p style="color: #666; margin-bottom: 30px;">Select an instrument to start playing quizzes and earn points!</p>
+
+    <!-- Instrument Selection -->
+    <div id="instrumentSection">
+      <h2 class="section-title">Choose Your Instrument</h2>
+      <div id="instrumentsGrid" class="instruments-grid">
+        <!-- Instruments will be loaded here -->
+      </div>
+    </div>
+
+    <!-- Level Selection -->
+    <div id="levelSection" style="display: none;">
+      <h2 class="section-title" id="selectedInstrumentTitle"></h2>
+      <div id="levelsGrid" class="levels-grid">
+        <!-- Levels will be shown here -->
+      </div>
+    </div>
+  </div>
+
+  <script src="/frontend/public/js/play/play.js"></script>
+</body>
+</html>
+
