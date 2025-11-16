@@ -57,7 +57,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
   e.preventDefault();
 
   // Clear previous errors
-  ['username', 'first', 'last', 'email', 'birthday', 'contact_number', 'password', 'confirm-password'].forEach(id => {
+  ['username', 'first', 'last', 'email', 'birthday', 'contact_number', 'home-address', 'password', 'confirm-password'].forEach(id => {
     hideError(id);
   });
 
@@ -102,6 +102,11 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
 
   if (!contact_number) {
     showError('contact_number', 'Contact number is required');
+    hasErrors = true;
+  }
+
+  if (!homeAddress) {
+    showError('home-address', 'Home address is required');
     hasErrors = true;
   }
 
