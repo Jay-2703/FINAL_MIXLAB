@@ -6,17 +6,20 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 /**
- * OAuth Controller
- * Handles Google and Facebook OAuth authentication
+ * LOGIN_PAGE: Use the served view path. Many frontend links point to
+ * `/frontend/views/...` so we serve that directory in `server.js`.
  */
+const LOGIN_PAGE = '/frontend/views/auth/login.html';
 
 /**
- * Google OAuth - Initiate authentication
- * GET /api/auth/google
+ * Google OAuth - Start
  */
 export const googleAuth = async (req, res) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/google/callback`;
+  const redirectUri =
+    process.env.GOOGLE_REDIRECT_URI ||
+    `${req.protocol}://${req.get('host')}/api/auth/google/callback`;
+
   const scope = 'profile email';
 
   if (!clientId) {
@@ -26,7 +29,8 @@ export const googleAuth = async (req, res) => {
     });
   }
 
-  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+  const authUrl =
+    `https://accounts.google.com/o/oauth2/v2/auth?` +
     `client_id=${clientId}&` +
     `redirect_uri=${encodeURIComponent(redirectUri)}&` +
     `response_type=code&` +
@@ -38,42 +42,47 @@ export const googleAuth = async (req, res) => {
 };
 
 /**
- * Google OAuth - Handle callback
- * GET /api/auth/google/callback
+ * Google OAuth Callback
  */
 export const googleCallback = async (req, res) => {
   try {
     const { code } = req.query;
 
     if (!code) {
-      return res.redirect('/frontend/views/auth/login.html?error=oauth_failed');
+      return res.redirect(`${LOGIN_PAGE}?error=oauth_failed`);
     }
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/google/callback`;
+    const redirectUri =
+      process.env.GOOGLE_REDIRECT_URI ||
+      `${req.protocol}://${req.get('host')}/api/auth/google/callback`;
 
-    // Exchange code for access token
-    const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
-      code,
-      client_id: clientId,
-      client_secret: clientSecret,
-      redirect_uri: redirectUri,
-      grant_type: 'authorization_code'
-    });
+    /** Exchange code → access token */
+    const tokenResponse = await axios.post(
+      'https://oauth2.googleapis.com/token',
+      {
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code'
+      }
+    );
 
     const { access_token } = tokenResponse.data;
 
-    // Get user info from Google
-    const userResponse = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
-      headers: {
-        Authorization: `Bearer ${access_token}`
+    /** Fetch user info */
+    const userResponse = await axios.get(
+      'https://www.googleapis.com/oauth2/v2/userinfo',
+      {
+        headers: { Authorization: `Bearer ${access_token}` }
       }
-    });
+    );
 
-    const { id, email, given_name, family_name, picture } = userResponse.data;
+    const { id, email, given_name, family_name } = userResponse.data;
 
-    // Check if user exists
+    /** Check if user exists */
     const [existingUser] = await query(
       'SELECT * FROM users WHERE email = ?',
       [email]
@@ -82,25 +91,31 @@ export const googleCallback = async (req, res) => {
     let user;
 
     if (existingUser) {
-      // Update user if needed
       user = existingUser;
     } else {
-      // Create new user
+      /** Create new user */
       const connection = await getConnection();
       try {
         await connection.beginTransaction();
 
-        // Generate a username from email
         const username = email.split('@')[0] + '_' + id.substring(0, 6);
 
         const [result] = await query(
           `INSERT INTO users (username, first_name, last_name, email, role, is_verified, hashed_password)
            VALUES (?, ?, ?, ?, 'student', TRUE, ?)`,
-          [username, given_name || 'User', family_name || '', email, 'oauth_user_' + id]
+          [
+            username,
+            given_name || 'User',
+            family_name || '',
+            email,
+            'oauth_user_' + id
+          ]
         );
 
         const [newUser] = await query(
-          'SELECT id, username, first_name, last_name, email, role, is_verified, created_at FROM users WHERE id = ?',
+          `SELECT id, username, first_name, last_name, email, role, is_verified, created_at 
+           FROM users 
+           WHERE id = ?`,
           [result.insertId]
         );
 
@@ -114,15 +129,17 @@ export const googleCallback = async (req, res) => {
       }
     }
 
-    // Generate JWT token
+    /** Generate JWT */
     const token = generateToken({
       id: user.id,
       username: user.username,
       email: user.email,
-      role: user.role
+      role: user.role,
+      first_name: user.first_name || null,
+      last_name: user.last_name || null
     });
 
-    // Set HTTP-only cookie
+    /** Set cookie */
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -130,22 +147,23 @@ export const googleCallback = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    // Redirect to frontend with token
+    /** SUCCESS Redirect */
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    res.redirect(`${frontendUrl}/frontend/views/auth/login.html?token=${token}&oauth=google`);
+    res.redirect(`${frontendUrl}${LOGIN_PAGE}?token=${token}&oauth=google`);
   } catch (error) {
     console.error('Google OAuth error:', error);
-    res.redirect('/frontend/views/auth/login.html?error=oauth_failed');
+    res.redirect(`${LOGIN_PAGE}?error=oauth_failed`);
   }
 };
 
 /**
- * Facebook OAuth - Initiate authentication
- * GET /api/auth/facebook
+ * Facebook OAuth - Start
  */
 export const facebookAuth = async (req, res) => {
   const appId = process.env.FACEBOOK_APP_ID;
-  const redirectUri = process.env.FACEBOOK_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/facebook/callback`;
+  const redirectUri =
+    process.env.FACEBOOK_REDIRECT_URI ||
+    `${req.protocol}://${req.get('host')}/api/auth/facebook/callback`;
 
   if (!appId) {
     return res.status(500).json({
@@ -154,7 +172,8 @@ export const facebookAuth = async (req, res) => {
     });
   }
 
-  const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?` +
+  const authUrl =
+    `https://www.facebook.com/v18.0/dialog/oauth?` +
     `client_id=${appId}&` +
     `redirect_uri=${encodeURIComponent(redirectUri)}&` +
     `scope=email,public_profile&` +
@@ -164,44 +183,51 @@ export const facebookAuth = async (req, res) => {
 };
 
 /**
- * Facebook OAuth - Handle callback
- * GET /api/auth/facebook/callback
+ * Facebook OAuth Callback
  */
 export const facebookCallback = async (req, res) => {
   try {
     const { code } = req.query;
 
     if (!code) {
-      return res.redirect('/frontend/views/auth/login.html?error=oauth_failed');
+      return res.redirect(`${LOGIN_PAGE}?error=oauth_failed`);
     }
 
     const appId = process.env.FACEBOOK_APP_ID;
     const appSecret = process.env.FACEBOOK_APP_SECRET;
-    const redirectUri = process.env.FACEBOOK_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/facebook/callback`;
+    const redirectUri =
+      process.env.FACEBOOK_REDIRECT_URI ||
+      `${req.protocol}://${req.get('host')}/api/auth/facebook/callback`;
 
-    // Exchange code for access token
-    const tokenResponse = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
-      params: {
-        client_id: appId,
-        client_secret: appSecret,
-        redirect_uri: redirectUri,
-        code
+    /** Exchange code → access token */
+    const tokenResponse = await axios.get(
+      'https://graph.facebook.com/v18.0/oauth/access_token',
+      {
+        params: {
+          client_id: appId,
+          client_secret: appSecret,
+          redirect_uri: redirectUri,
+          code
+        }
       }
-    });
+    );
 
     const { access_token } = tokenResponse.data;
 
-    // Get user info from Facebook
-    const userResponse = await axios.get('https://graph.facebook.com/me', {
-      params: {
-        fields: 'id,email,first_name,last_name,picture',
-        access_token
+    /** Get Facebook user info */
+    const userResponse = await axios.get(
+      'https://graph.facebook.com/me',
+      {
+        params: {
+          fields: 'id,email,first_name,last_name,picture',
+          access_token
+        }
       }
-    });
+    );
 
     const { id, email, first_name, last_name } = userResponse.data;
 
-    // Check if user exists
+    /** Check if user exists */
     const [existingUser] = await query(
       'SELECT * FROM users WHERE email = ?',
       [email]
@@ -212,22 +238,32 @@ export const facebookCallback = async (req, res) => {
     if (existingUser) {
       user = existingUser;
     } else {
-      // Create new user
+      /** Create new user */
       const connection = await getConnection();
       try {
         await connection.beginTransaction();
 
-        // Generate a username from email or Facebook ID
-        const username = (email ? email.split('@')[0] : 'user') + '_' + id.substring(0, 6);
+        const username =
+          (email ? email.split('@')[0] : 'user') +
+          '_' +
+          id.substring(0, 6);
 
         const [result] = await query(
           `INSERT INTO users (username, first_name, last_name, email, role, is_verified, hashed_password)
            VALUES (?, ?, ?, ?, 'student', TRUE, ?)`,
-          [username, first_name || 'User', last_name || '', email || `facebook_${id}@facebook.com`, 'oauth_user_' + id]
+          [
+            username,
+            first_name || 'User',
+            last_name || '',
+            email || `facebook_${id}@facebook.com`,
+            'oauth_user_' + id
+          ]
         );
 
         const [newUser] = await query(
-          'SELECT id, username, first_name, last_name, email, role, is_verified, created_at FROM users WHERE id = ?',
+          `SELECT id, username, first_name, last_name, email, role, is_verified, created_at 
+           FROM users 
+           WHERE id = ?`,
           [result.insertId]
         );
 
@@ -241,7 +277,7 @@ export const facebookCallback = async (req, res) => {
       }
     }
 
-    // Generate JWT token
+    /** Generate JWT */
     const token = generateToken({
       id: user.id,
       username: user.username,
@@ -249,7 +285,7 @@ export const facebookCallback = async (req, res) => {
       role: user.role
     });
 
-    // Set HTTP-only cookie
+    /** Cookie */
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -257,12 +293,11 @@ export const facebookCallback = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    // Redirect to frontend with token
+    /** SUCCESS Redirect */
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    res.redirect(`${frontendUrl}/frontend/views/auth/login.html?token=${token}&oauth=facebook`);
+    res.redirect(`${frontendUrl}${LOGIN_PAGE}?token=${token}&oauth=facebook`);
   } catch (error) {
     console.error('Facebook OAuth error:', error);
-    res.redirect('/frontend/views/auth/login.html?error=oauth_failed');
+    res.redirect(`${LOGIN_PAGE}?error=oauth_failed`);
   }
 };
-

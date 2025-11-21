@@ -274,26 +274,179 @@
     });
   }
 
-  // Logout functionality
+  // ===================================================================
+  // LOGOUT MODAL
+  // ===================================================================
+  
+  // Create logout modal
+  const logoutModal = document.createElement('div');
+  logoutModal.id = 'logoutModal';
+  logoutModal.className = 'logout-modal';
+  logoutModal.innerHTML = `
+    <div class="logout-modal-content">
+      <div class="logout-modal-icon">👋</div>
+      <h2 class="logout-modal-title">Log Out?</h2>
+      <p class="logout-modal-text">Are you sure you want to log out of your account?</p>
+      <div class="logout-modal-buttons">
+        <button class="logout-modal-btn cancel" id="cancelLogout">Cancel</button>
+        <button class="logout-modal-btn confirm" id="confirmLogout">Yes, Log Out</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(logoutModal);
+
+  // Add modal styles
+  const modalStyles = document.createElement('style');
+  modalStyles.textContent = `
+    .logout-modal {
+      display: none;
+      position: fixed;
+      z-index: 10000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      animation: fadeIn 0.3s ease;
+    }
+
+    .logout-modal.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logout-modal-content {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      animation: slideUp 0.3s ease;
+    }
+
+    .logout-modal-icon {
+      font-size: 60px;
+      margin-bottom: 20px;
+    }
+
+    .logout-modal-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .logout-modal-text {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    .logout-modal-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+    }
+
+    .logout-modal-btn {
+      padding: 12px 30px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .logout-modal-btn.cancel {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .logout-modal-btn.cancel:hover {
+      background: #e0e0e0;
+    }
+
+    .logout-modal-btn.confirm {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .logout-modal-btn.confirm:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+  `;
+  document.head.appendChild(modalStyles);
+
+  // Logout functionality with modal
   const logoutBtn = document.getElementById('profileLogout');
   const logoutBtnMobile = document.getElementById('profileLogoutMobile');
-  
+  const cancelLogout = document.getElementById('cancelLogout');
+  const confirmLogout = document.getElementById('confirmLogout');
+
+  function showLogoutModal() {
+    logoutModal.classList.add('active');
+  }
+
+  function hideLogoutModal() {
+    logoutModal.classList.remove('active');
+  }
+
   function handleLogout() {
-    if(confirm('Logout from MixLab?')){
-      try { 
-        localStorage.removeItem('token'); 
-        localStorage.removeItem('user'); 
-        sessionStorage.clear(); 
-      } catch(e){}
-      window.location.href = '../login/login.html';
-    }
+    try { 
+      localStorage.removeItem('token'); 
+      localStorage.removeItem('user'); 
+      sessionStorage.clear(); 
+    } catch(e){}
+    window.location.href = '/frontend/views/auth/login.html';
   }
   
   if(logoutBtn){
-    logoutBtn.addEventListener('click', handleLogout);
+    logoutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      showLogoutModal();
+    });
   }
   
   if(logoutBtnMobile){
-    logoutBtnMobile.addEventListener('click', handleLogout);
+    logoutBtnMobile.addEventListener('click', (e) => {
+      e.preventDefault();
+      showLogoutModal();
+    });
   }
+
+  if(cancelLogout){
+    cancelLogout.addEventListener('click', hideLogoutModal);
+  }
+
+  if(confirmLogout){
+    confirmLogout.addEventListener('click', handleLogout);
+  }
+
+  // Close modal when clicking outside
+  logoutModal.addEventListener('click', (e) => {
+    if (e.target === logoutModal) {
+      hideLogoutModal();
+    }
+  });
 })();

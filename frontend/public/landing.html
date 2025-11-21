@@ -17,7 +17,23 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- CSS -->
-    <link rel="stylesheet" href="css/landing.css">
+    <link rel="stylesheet" href="/frontend/public/css/landing.css">
+    
+    <style>
+        /* Avatar styles - plain color instead of gradient */
+        .user-avatar {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+    </style>
 </head>
 <body>
 
@@ -33,37 +49,34 @@
             <!-- Navigation -->
             <nav class="primary-nav" role="navigation" aria-label="Primary Navigation">
                 <ul class="nav-list">
+                    <li class="nav-item"><a href="#about">About</a></li>
                     <li class="nav-item dropdown">
                         <a href="#services">Services</a>
                         <ul class="dropdown-menu">
                             <li><a href="#rehearsal">Rehearsal Space</a></li>
                             <li><a href="#recording">Recording</a></li>
-                            <li><a href="#lessons">Music Lessons</a></li>
+                            <li><a href="/frontend/views/user/welcome.html">Music Lessons</a></li>
                             <li><a href="#dance">Dance Studio</a></li>
                             <li><a href="#arrangement">Music Arrangement</a></li>
                             <li><a href="#voiceover">Voiceover/Dubbing</a></li>
                         </ul>
                     </li>
-                    <li class="nav-item"><a href="#contact">Support</a></li>
-                    <li class="nav-item"><a href="#about">About</a></li>
+                    <li class="nav-item"><a href="#gallery">Gallery</a></li>
+                    <li class="nav-item"><a href="#contact">Contact Us</a></li>
                 </ul>
             </nav>
 
             <!-- User Account -->
             <div class="user-actions">
-    <!-- Notification Icon -->
-    <div id="notif-wrapper" class="notif-wrapper" style="display:none;">
-        <i class="fa-solid fa-bell notif-icon"></i>
-        <span id="notif-count" class="notif-count">3</span>
-    </div>
+                <!-- Notification Icon -->
+                <div id="notif-wrapper" class="notif-wrapper" style="display:none;">
+                    <i class="fa-solid fa-bell notif-icon"></i>
+                    <span id="notif-count" class="notif-count">3</span>
+                </div>
 
-    <!-- Account Name or Login -->
-    <a id="account-link" href="/frontend/views/auth/login.html" class="btn-account">Log in</a>
-
-    <!-- Logout Button -->
-    <a id="logout-link" href="#" class="btn-logout" style="display: none;">Logout</a>
-    </div>
-
+                <!-- Account Name or Login -->
+                <a id="account-link" href="/frontend/views/auth/login.html" class="btn-account">Log in</a>
+            </div>
 
             <!-- Hamburger -->
             <button id="menu-toggle" class="hamburger-btn" aria-label="Open Menu">☰</button>
@@ -76,6 +89,7 @@
         <nav class="mobile-nav">
             <h2>MixLab Music Studio</h2>
 
+            <a href="#about">About</a>
             <div class="mobile-menu-section">
                 <div class="mobile-menu-title">
                     Services <span class="toggle" id="toggle-services">−</span>
@@ -83,16 +97,15 @@
                 <ul class="mobile-submenu" id="submenu-services" style="display: block;">
                     <li><a href="#rehearsal">Rehearsal Space</a></li>
                     <li><a href="#recording">Recording</a></li>
-                    <li><a href="#lessons">Music Lessons</a></li>
+                    <li><a href="/frontend/views/user/welcome.html">Music Lessons</a></li>
                     <li><a href="#dance">Dance Studio</a></li>
                     <li><a href="#arrangement">Music Arrangement</a></li>
                     <li><a href="#voiceover">Voiceover/Dubbing</a></li>
                 </ul>
             </div>
-
-            <a href="#contact">Support</a>
-            <a href="#about">About</a>
-            <a href="/frontend/views/auth/login.html" class="mobile-account-btn">Log in</a>
+            <a href="#gallery">Gallery</a>
+            <a href="#contact">Contact Us</a>
+            <a id="mobile-account-btn" href="/frontend/views/auth/login.html" class="mobile-account-btn">Log in</a>
         </nav>
     </aside>
 
@@ -146,7 +159,7 @@
     <section id="services" class="services-section">
         <h2 class="section-heading">Services</h2>
         <div class="services-grid">
-            <div class="service-card">
+            <div class="service-card" onclick="window.location.href='/frontend/views/user/welcome.html'" style="cursor: pointer;">
                 <img src="assets/images/slider1.jpg" alt="Music School">
                 <h3>Music lessons</h3>
                 <p>Learn to play, create, and perform.
@@ -235,8 +248,8 @@
             <label for="booking-name">Full Name</label>
             <input id="booking-name" type="text" placeholder="Your Full Name" required>
             
-            <label for="booking-birthday">Birthday</label>
-            <input id="booking-birthday" type="date" required>
+            <label for="booking-date">Booking Date</label>
+            <input id="booking-date" type="date" required>
             
             <label for="booking-hours">Number of Hours</label>
             <select id="booking-hours" required>

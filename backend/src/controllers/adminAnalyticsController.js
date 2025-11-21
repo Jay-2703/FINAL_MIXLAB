@@ -124,7 +124,7 @@ export const getBookingReport = async (req, res) => {
       i.name as instructor_name
       FROM bookings b
       LEFT JOIN users u ON b.user_id = u.id
-      LEFT JOIN appointments a ON b.booking_id = a.booking_id
+      LEFT JOIN bookings a ON b.booking_id = a.booking_id
       LEFT JOIN users i ON a.instructor_id = i.id
       WHERE 1=1
     `;

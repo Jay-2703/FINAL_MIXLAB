@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MixLab Studio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/frontend/public/css/gamified.css">
+</head>
+<body class="dark-theme">
+  <div id="app-root"></div>
+
+  <script>
+    // Configuration
+    const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000';
+    
+    // Router
+    const router = {
+      currentPage: 'welcome',
+      
+      navigate(page, params = {}) {
+        this.currentPage = page;
+        this.params = params;
+        this.render();
+      },
+      
+      render() {
+        const root = document.getElementById('app-root');
+        
+        switch(this.currentPage) {
+          case 'welcome':
+            root.innerHTML = WelcomePage.render();
+            WelcomePage.init();
+            document.body.className = 'dark-theme';
+            break;
+          case 'play':
+            root.innerHTML = PlayPage.render();
+            PlayPage.init();
+            document.body.className = 'dark-theme';
+            break;
+          case 'quiz-levels':
+            root.innerHTML = QuizLevelsPage.render();
+            QuizLevelsPage.init();
+            document.body.className = 'light-theme';
+            break;
+          case 'quiz-game':
+            root.innerHTML = QuizGamePage.render();
+            QuizGamePage.init();
+            document.body.className = 'light-theme';
+            break;
+          case 'quiz-results':
+            root.innerHTML = QuizResultsPage.render();
+            QuizResultsPage.init();
+            document.body.className = 'light-theme';
+            break;
+        }
+      }
+    };
+
+    // Welcome Page
+    const WelcomePage = {
+      render() {
+        return `
+          <div class="container container-narrow">
+            <h1 class="page-title">🎵 Welcome to MixLab Studio</h1>
+            <p class="page-subtitle">Choose your learning path</p>
+
+            <div class="grid-2">
+              <div class="card" id="play-card">
+                <div class="card-icon">🎮</div>
+                <div class="card-title">Play</div>
+                <div class="card-description">
+                  Test your skills with interactive quizzes and games. Earn points, unlock achievements, and challenge yourself!
+                </div>
+              </div>
+
+              <div class="card" id="learn-card">
+                <div class="card-icon">📚</div>
+                <div class="card-title">Learn</div>
+                <div class="card-description">
+                  Study at your own pace with complete lessons. Watch videos, read content, and master music production.
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      },
+      
+      init() {
+        document.getElementById('play-card').addEventListener('click', () => {
+          router.navigate('play');
+        });
+        
+        document.getElementById('learn-card').addEventListener('click', () => {
+          alert('Learn mode coming soon!');
+        });
+      }
+    };
+
+    // Play Page (Instrument Selection)
+    const PlayPage = {
+      instruments: [
+        { id: 1, name: 'Piano', icon: '🎹', description: 'Test your knowledge of piano techniques and music concepts.' },
+        { id: 2, name: 'Guitar', icon: '🎸', description: 'Challenge yourself with chords, scales, and guitar theory.' },
+        { id: 3, name: 'Music Theory', icon: '🎼', description: 'Master fundamentals, notation, rhythm, and composition.' }
+      ],
+      
+      render() {
+        return `
+          <div class="container">
+            <a href="#" class="back-button" id="back-to-welcome">← Back</a>
+
+            <div class="page-header">
+              <h1 class="page-title">🎮 Choose Your Instrument</h1>
+              <p class="page-subtitle">Select an instrument to start playing quizzes</p>
+            </div>
+
+            <div class="grid-3" id="instruments-grid">
+              ${this.instruments.map(inst => `
+                <div class="card" data-instrument-id="${inst.id}" data-instrument-name="${inst.name}">
+                  <div class="card-icon">${inst.icon}</div>
+                  <div class="card-title">${inst.name}</div>
+                  <div class="card-description">${inst.description}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      },
+      
+      init() {
+        document.getElementById('back-to-welcome').addEventListener('click', (e) => {
+          e.preventDefault();
+          router.navigate('welcome');
+        });
+        
+        document.querySelectorAll('#instruments-grid .card').forEach(card => {
+          card.addEventListener('click', () => {
+            const instrumentId = card.dataset.instrumentId;
+            const instrumentName = card.dataset.instrumentName;
+            sessionStorage.setItem('selectedInstrument', instrumentName);
+            sessionStorage.setItem('selectedInstrumentId', instrumentId);
+            router.navigate('quiz-levels');
+          });
+        });
+      }
+    };
+
+    // Quiz Levels Page
+    const QuizLevelsPage = {
+      levels: [
+        { 
+          id: 'beginner', 
+          name: 'Beginner', 
+          icon: '🌱', 
+          description: 'Perfect for those just starting out. Test your basic knowledge with simple questions.',
+          questions: 10,
+          minutes: 5,
+          difficulty: 'Easy',
+          class: 'beginner'
+        },
+        { 
+          id: 'intermediate', 
+          name: 'Intermediate', 
+          icon: '🎯', 
+          description: 'Step up your game! Challenge yourself with questions that require deeper understanding.',
+          questions: 15,
+          minutes: 10,
+          difficulty: 'Medium',
+          class: 'intermediate'
+        },
+        { 
+          id: 'advanced', 
+          name: 'Advanced', 
+          icon: '🏆', 
+          description: 'For experts only! Test your mastery with challenging questions that will push your limits.',
+          questions: 20,
+          minutes: 15,
+          difficulty: 'Hard',
+          class: 'advanced'
+        }
+      ],
+      
+      render() {
+        const selectedInstrument = sessionStorage.getItem('selectedInstrument') || 'Piano';
+        const icons = { 'Piano': '🎹', 'Guitar': '🎸', 'Music Theory': '🎼' };
+        
+        return `
+          <div class="container container-medium">
+            <div class="quiz-header">
+              <a href="#" class="back-button" id="back-to-play">← Back to Instruments</a>
+              <h1 class="page-title">${icons[selectedInstrument] || '🎵'} ${selectedInstrument} Quiz</h1>
+              <p class="page-subtitle light">Choose your difficulty level</p>
+            </div>
+
+            <div class="grid-3">
+              ${this.levels.map(level => `
+                <div class="card card-light level-card ${level.class}" data-level="${level.id}">
+                  <div class="card-icon">${level.icon}</div>
+                  <div class="best-score" id="${level.id}Score" style="display: none;">Best: 0/${level.questions}</div>
+                  <div class="card-title card-title-light">${level.name}</div>
+                  <div class="card-description card-description-light">${level.description}</div>
+                  <div class="stats-grid">
+                    <div class="stat">
+                      <div class="stat-value">${level.questions}</div>
+                      <div class="stat-label">Questions</div>
+                    </div>
+                    <div class="stat">
+                      <div class="stat-value">${level.minutes}</div>
+                      <div class="stat-label">Minutes</div>
+                    </div>
+                    <div class="stat">
+                      <div class="stat-value">${level.difficulty}</div>
+                      <div class="stat-label">Difficulty</div>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      },
+      
+      init() {
+        document.getElementById('back-to-play').addEventListener('click', (e) => {
+          e.preventDefault();
+          router.navigate('play');
+        });
+        
+        this.loadBestScores();
+        
+        document.querySelectorAll('.level-card:not(.locked)').forEach(card => {
+          card.addEventListener('click', () => {
+            const level = card.dataset.level;
+            sessionStorage.setItem('selectedQuizLevel', level);
+            router.navigate('quiz-game');
+          });
+        });
+      },
+      
+      async loadBestScores() {
+        // Mock implementation - replace with actual API call
+        const mockScores = {
+          beginner: { score: 8, total: 10 },
+          intermediate: { score: 12, total: 15 },
+          advanced: null
+        };
+        
+        Object.keys(mockScores).forEach(level => {
+          if (mockScores[level]) {
+            const el = document.getElementById(`${level}Score`);
+            if (el) {
+              el.textContent = `Best: ${mockScores[level].score}/${mockScores[level].total}`;
+              el.style.display = 'inline-block';
+            }
+          }
+        });
+      }
+    };
+
+    // Quiz Game Page
+    const QuizGamePage = {
+      currentQuestionIndex: 0,
+      score: 0,
+      timeRemaining: 300,
+      timerInterval: null,
+      selectedAnswer: null,
+      quizData: null,
+      userAnswers: [],
+      
+      mockQuizData: {
+        beginner: {
+          totalQuestions: 10,
+          timeLimit: 300,
+          questions: [
+            { id: 1, question: "How many keys does a standard piano have?", options: ["76 keys", "88 keys", "96 keys", "100 keys"], correctAnswer: 1, explanation: "A standard piano has 88 keys: 52 white keys and 36 black keys." },
+            { id: 2, question: "What does 'forte' mean in music?", options: ["Soft", "Loud", "Fast", "Slow"], correctAnswer: 1, explanation: "Forte (f) means to play loudly or with strong volume." },
+            { id: 3, question: "How many lines are there on a musical staff?", options: ["3 lines", "4 lines", "5 lines", "6 lines"], correctAnswer: 2, explanation: "A musical staff has 5 lines and 4 spaces where notes are placed." },
+            { id: 4, question: "What is the musical alphabet?", options: ["A to G", "A to H", "A to Z", "C to B"], correctAnswer: 0, explanation: "The musical alphabet consists of seven letters: A, B, C, D, E, F, and G." },
+            { id: 5, question: "What does a sharp (♯) symbol do to a note?", options: ["Lowers it by half step", "Raises it by half step", "Doubles the volume", "Shortens the duration"], correctAnswer: 1, explanation: "A sharp raises a note by one half step (semitone)." },
+            { id: 6, question: "Which clef is typically used for higher-pitched instruments?", options: ["Bass clef", "Treble clef", "Alto clef", "Tenor clef"], correctAnswer: 1, explanation: "The treble clef (also called G clef) is used for higher-pitched notes and instruments." },
+            { id: 7, question: "How many beats does a whole note typically receive?", options: ["1 beat", "2 beats", "3 beats", "4 beats"], correctAnswer: 3, explanation: "In 4/4 time, a whole note receives 4 beats." },
+            { id: 8, question: "What is a chord?", options: ["A single note", "Two or more notes played together", "A type of rhythm", "A musical instrument"], correctAnswer: 1, explanation: "A chord is a combination of three or more notes played simultaneously." },
+            { id: 9, question: "What does 'piano' mean in musical terms?", options: ["Fast", "Slow", "Soft", "Loud"], correctAnswer: 2, explanation: "Piano (p) is a dynamic marking that means to play softly or quietly." },
+            { id: 10, question: "What is the most common time signature?", options: ["3/4", "4/4", "2/4", "6/8"], correctAnswer: 1, explanation: "4/4 time (also called common time) is the most widely used time signature in music." }
+          ]
+        }
+      },
+      
+      render() {
+        return `
+          <div class="container container-quiz">
+            <div class="quiz-header">
+              <div class="quiz-info">
+                <div class="info-item">
+                  <span>📊</span>
+                  <span id="questionProgress">Question 1/10</span>
+                </div>
+                <div class="info-item">
+                  <span>🎯</span>
+                  <span id="scoreDisplay">Score: 0</span>
+                </div>
+              </div>
+              <div class="info-item">
+                <span>⏱️</span>
+                <span class="timer" id="timer">5:00</span>
+              </div>
+            </div>
+
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressBar"></div>
+            </div>
+
+            <div id="quizContent">
+              <div class="loading">Loading quiz...</div>
+            </div>
+          </div>
+        `;
+      },
+      
+      async init() {
+        this.currentQuestionIndex = 0;
+        this.score = 0;
+        this.userAnswers = [];
+        this.selectedAnswer = null;
+        
+        const selectedLevel = sessionStorage.getItem('selectedQuizLevel') || 'beginner';
+        
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        this.quizData = this.mockQuizData[selectedLevel];
+        this.timeRemaining = this.quizData.timeLimit;
+        
+        this.startQuiz();
+      },
+      
+      startQuiz() {
+        this.startTimer();
+        this.displayQuestion();
+      },
+      
+      startTimer() {
+        this.timerInterval = setInterval(() => {
+          this.timeRemaining--;
+          this.updateTimerDisplay();
+          
+          if (this.timeRemaining <= 0) {
+            clearInterval(this.timerInterval);
+            this.endQuiz();
+          }
+        }, 1000);
+      },
+      
+      updateTimerDisplay() {
+        const minutes = Math.floor(this.timeRemaining / 60);
+        const seconds = this.timeRemaining % 60;
+        const timerEl = document.getElementById('timer');
+        if (timerEl) {
+          timerEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+          
+          timerEl.classList.remove('warning', 'danger');
+          if (this.timeRemaining <= 60) {
+            timerEl.classList.add('danger');
+          } else if (this.timeRemaining <= 120) {
+            timerEl.classList.add('warning');
+          }
+        }
+      },
+      
+      displayQuestion() {
+        const question = this.quizData.questions[this.currentQuestionIndex];
+        this.selectedAnswer = null;
+        
+        const progressEl = document.getElementById('questionProgress');
+        const progressBarEl = document.getElementById('progressBar');
+        
+        if (progressEl) {
+          progressEl.textContent = `Question ${this.currentQuestionIndex + 1}/${this.quizData.totalQuestions}`;
+        }
+        
+        if (progressBarEl) {
+          progressBarEl.style.width = `${((this.currentQuestionIndex + 1) / this.quizData.totalQuestions) * 100}%`;
+        }
+        
+        const letters = ['A', 'B', 'C', 'D'];
+        
+        const html = `
+          <div class="question-card">
+            <div class="question-number">Question ${this.currentQuestionIndex + 1} of ${this.quizData.totalQuestions}</div>
+            <div class="question-text">${question.question}</div>
+            <div class="answers-grid">
+              ${question.options.map((option, index) => `
+                <div class="answer-option" data-index="${index}">
+                  <div class="answer-letter">${letters[index]}</div>
+                  <div>${option}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <button class="btn btn-primary" id="submitBtn" disabled>Select an answer</button>
+          <div class="feedback-card" id="feedback"></div>
+        `;
+        
+        document.getElementById('quizContent').innerHTML = html;
+        this.attachAnswerListeners();
+      },
+      
+      attachAnswerListeners() {
+        const options = document.querySelectorAll('.answer-option');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        options.forEach(option => {
+          option.addEventListener('click', () => {
+            if (option.classList.contains('disabled')) return;
+            
+            options.forEach(opt => opt.classList.remove('selected'));
+            option.classList.add('selected');
+            this.selectedAnswer = parseInt(option.dataset.index);
+            
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Submit Answer';
+            }
+          });
+        });
+        
+        if (submitBtn) {
+          submitBtn.addEventListener('click', () => this.submitAnswer());
+        }
+      },
+      
+      submitAnswer() {
+        const question = this.quizData.questions[this.currentQuestionIndex];
+        const isCorrect = this.selectedAnswer === question.correctAnswer;
+        
+        if (isCorrect) {
+          this.score += 10;
+          const scoreDisplay = document.getElementById('scoreDisplay');
+          if (scoreDisplay) {
+            scoreDisplay.textContent = `Score: ${this.score}`;
+          }
+        }
+        
+        this.userAnswers.push({
+          questionId: question.id,
+          userAnswer: this.selectedAnswer,
+          correctAnswer: question.correctAnswer,
+          isCorrect
+        });
+        
+        this.showFeedback(isCorrect, question);
+        
+        document.querySelectorAll('.answer-option').forEach(opt => {
+          opt.classList.add('disabled');
+          const index = parseInt(opt.dataset.index);
+          if (index === question.correctAnswer) {
+            opt.classList.add('correct');
+          } else if (index === this.selectedAnswer && !isCorrect) {
+            opt.classList.add('incorrect');
+          }
+        });
+        
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) {
+          submitBtn.style.display = 'none';
+        }
+      },
+      
+      showFeedback(isCorrect, question) {
+        const feedbackEl = document.getElementById('feedback');
+        if (feedbackEl) {
+          feedbackEl.className = `feedback-card show ${isCorrect ? 'feedback-correct' : 'feedback-incorrect'}`;
+          
+          feedbackEl.innerHTML = `
+            <div class="feedback-title">
+              <span>${isCorrect ? '✓ Correct!' : '✗ Incorrect'}</span>
+            </div>
+            <div class="feedback-explanation">${question.explanation}</div>
+            <button class="next-button" id="nextBtn">
+              ${this.currentQuestionIndex < this.quizData.totalQuestions - 1 ? 'Next Question →' : 'View Results →'}
+            </button>
+          `;
+          
+          const nextBtn = document.getElementById('nextBtn');
+          if (nextBtn) {
+            nextBtn.addEventListener('click', () => this.nextQuestion());
+          }
+        }
+      },
+      
+      nextQuestion() {
+        this.currentQuestionIndex++;
+        
+        if (this.currentQuestionIndex < this.quizData.totalQuestions) {
+          this.displayQuestion();
+        } else {
+          this.endQuiz();
+        }
+      },
+      
+      endQuiz() {
+        clearInterval(this.timerInterval);
+        
+        const selectedInstrument = sessionStorage.getItem('selectedInstrument') || 'Piano';
+        const selectedInstrumentId = sessionStorage.getItem('selectedInstrumentId') || '1';
+        const selectedLevel = sessionStorage.getItem('selectedQuizLevel') || 'beginner';
+        
+        const results = {
+          instrumentId: selectedInstrumentId,
+          instrument: selectedInstrument,
+          level: selectedLevel,
+          score: this.score,
+          totalQuestions: this.quizData.totalQuestions,
+          correctAnswers: this.userAnswers.filter(a => a.isCorrect).length,
+          timeSpent: this.quizData.timeLimit - this.timeRemaining,
+          answers: this.userAnswers
+        };
+        
+        sessionStorage.setItem('quizResults', JSON.stringify(results));
+        router.navigate('quiz-results');
+      }
+    };
+
+    // Quiz Results Page
+    const QuizResultsPage = {
+      results: null,
+      
+      render() {
+        return `
+          <div class="container container-narrow">
+            <div class="results-card">
+              <div class="result-icon" id="resultIcon">🎉</div>
+              <h1 class="result-title" id="resultTitle">Quiz Complete!</h1>
+              <p class="result-subtitle" id="resultSubtitle">Piano - Beginner Level</p>
+              
+              <div class="score-display" id="scoreDisplay">8/10</div>
+              <div class="score-label">Correct Answers</div>
+              
+              <div class="grid-3 stats-grid">
+                <div class="stat-item">
+                  <div class="stat-icon">✓</div>
+                  <div class="stat-value" id="correctCount">8</div>
+                  <div class="stat-label">Correct</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-icon">✗</div>
+                  <div class="stat-value" id="incorrectCount">2</div>
+                  <div class="stat-label">Incorrect</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-icon">%</div>
+                  <div class="stat-value" id="percentageScore">80%</div>
+                  <div class="stat-label">Score</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-icon">⏱️</div>
+                  <div class="stat-value" id="timeSpent">3:45</div>
+                  <div class="stat-label">Time Spent</div>
+                </div>
+              </div>
+
+              <div class="performance-message" id="performanceMessage">
+                <p class="performance-text">Excellent work! You've demonstrated strong understanding of the fundamentals.</p>
+              </div>
+
+              <div class="achievement-section" id="achievementSection">
+                <div class="achievement-title">
+                  <span>🏆</span>
+                  <span>New Achievements Unlocked!</span>
+                </div>
+                <div class="badges-grid" id="badgesContainer"></div>
+              </div>
+
+              <div class="action-buttons">
+                <button class="action-btn btn-primary" id="btnRetry">
+                  <span>🔄</span>
+                  <span>Try Again</span>
+                </button>
+                <button class="action-btn btn-primary" id="btnNewLevel">
+                  <span>⬆️</span>
+                  <span>Next Level</span>
+                </button>
+                <button class="action-btn btn-secondary" id="btnBack">
+                  <span>←</span>
+                  <span>Back to Levels</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="review-section">
+              <h2 class="review-title">📋 Answer Review</h2>
+              <div id="reviewContainer"></div>
+            </div>
+          </div>
+        `;
+      },
+      
+      init() {
+        this.results = JSON.parse(sessionStorage.getItem('quizResults') || '{}');
+        
+        if (!this.results.score && this.results.score !== 0) {
+          router.navigate('quiz-levels');
+          return;
+        }
+        
+        this.displayResults();
+        
+        document.getElementById('btnRetry').addEventListener('click', () => {
+          sessionStorage.removeItem('quizResults');
+          router.navigate('quiz-game');
+        });
+        
+        document.getElementById('btnNewLevel').addEventListener('click', () => {
+          const levelOrder = ['beginner', 'intermediate', 'advanced'];
+          const currentIndex = levelOrder.indexOf(this.results.level);
+          
+          if (currentIndex < levelOrder.length - 1) {
+            sessionStorage.setItem('selectedQuizLevel', levelOrder[currentIndex + 1]);
+            sessionStorage.removeItem('quizResults');
+            router.navigate('quiz-game');
+          } else {
+            alert("You've completed all levels! Try a different instrument.");
+            router.navigate('play');
+          }
+        });
+        
+        document.getElementById('btnBack').addEventListener('click', () => {
+          sessionStorage.removeItem('quizResults');
+          router.navigate('quiz-levels');
+        });
+      },
+      
+      displayResults() {
+        document.getElementById('resultSubtitle').textContent = 
+          `${this.results.instrument} - ${this.capitalizeFirst(this.results.level)} Level`;
+        
+        document.getElementById('scoreDisplay').textContent = 
+          `${this.results.correctAnswers}/${this.results.totalQuestions}`;
+        
+        document.getElementById('correctCount').textContent = this.results.correctAnswers;
+        document.getElementById('incorrectCount').textContent = 
+          this.results.totalQuestions - this.results.correctAnswers;
+        
+        const percentage = Math.round((this.results.correctAnswers / this.results.totalQuestions) * 100);
+        document.getElementById('percentageScore').textContent = `${percentage}%`;
+        
+        const minutes = Math.floor(this.results.timeSpent / 60);
+        const seconds = this.results.timeSpent % 60;
+        document.getElementById('timeSpent').textContent = 
+          `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        this.updatePerformanceDisplay(percentage);
+        this.displayAchievements(percentage);
+        this.displayAnswerReview();
+      },
+      
+      updatePerformanceDisplay(percentage) {
+        const iconEl = document.getElementById('resultIcon');
+        const titleEl = document.getElementById('resultTitle');
+        const messageEl = document.querySelector('.performance-text');
+        
+        if (percentage === 100) {
+          iconEl.textContent = '🏆';
+          titleEl.textContent = 'Perfect Score!';
+          messageEl.textContent = 'Outstanding! You achieved a perfect score. You have mastered this level!';
+        } else if (percentage >= 80) {
+          iconEl.textContent = '🎉';
+          titleEl.textContent = 'Excellent Work!';
+          messageEl.textContent = 'Great job! You demonstrated strong understanding of the material.';
+        } else if (percentage >= 60) {
+          iconEl.textContent = '👍';
+          titleEl.textContent = 'Good Job!';
+          messageEl.textContent = 'Well done! You have a solid grasp of the basics. Keep practicing to improve.';
+        } else {
+          iconEl.textContent = '💪';
+          titleEl.textContent = 'Keep Practicing!';
+          messageEl.textContent = "Don't give up! Review the material and try again. Every attempt helps you learn.";
+        }
+      },
+      
+      displayAchievements(percentage) {
+        const badges = [];
+        
+        if (percentage === 100) {
+          badges.push({ icon: '🏆', name: 'Perfect Score' });
+        }
+        
+        if (this.results.level === 'beginner') {
+          badges.push({ icon: '🌟', name: 'First Steps' });
+        }
+        
+        if (this.results.timeSpent < (this.results.totalQuestions * 30) / 2) {
+          badges.push({ icon: '⚡', name: 'Speed Master' });
+        }
+        
+        if (percentage >= 80) {
+          badges.push({ icon: '🎯', name: 'High Scorer' });
+        }
+        
+        if (badges.length > 0) {
+          const achievementSection = document.getElementById('achievementSection');
+          achievementSection.classList.add('show');
+          
+          const badgesContainer = document.getElementById('badgesContainer');
+          badgesContainer.innerHTML = badges.map(badge => `
+            <div class="badge">
+              <div class="badge-icon">${badge.icon}</div>
+              <div class="badge-name">${badge.name}</div>
+            </div>
+          `).join('');
+        }
+      },
+      
+      displayAnswerReview() {
+        const container = document.getElementById('reviewContainer');
+        const letters = ['A', 'B', 'C', 'D'];
+        
+        container.innerHTML = this.results.answers.map((answer, index) => `
+          <div class="question-review">
+            <div class="question-header">
+              <div class="question-status ${answer.isCorrect ? 'status-correct' : 'status-incorrect'}">
+                ${answer.isCorrect ? '✓' : '✗'}
+              </div>
+              <div class="question-text">Question ${index + 1}</div>
+            </div>
+            <div class="answer-comparison">
+              ${!answer.isCorrect ? `
+                <div class="answer-row">
+                  <span class="wrong-answer">Your answer: ${letters[answer.userAnswer]}</span>
+                </div>
+              ` : ''}
+              <div class="answer-row">
+                <span class="correct-answer">Correct answer: ${letters[answer.correctAnswer]}</span>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      },
+      
+      capitalizeFirst(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+      }
+    };
+
+    // Initialize app
+    document.addEventListener('DOMContentLoaded', () => {
+      router.render();
+    });
+  </script>
+</body>
+</html>

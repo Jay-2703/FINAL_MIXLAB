@@ -1,7 +1,7 @@
 import express from 'express';
 import { requireAdmin, requireAdminOnly } from '../middleware/adminAuth.js';
 import * as adminController from '../controllers/adminController.js';
-import * as adminAppointmentController from '../controllers/adminAppointmentController.js';
+import * as adminBookingController from '../controllers/adminBookingController.js';
 import * as adminContentController from '../controllers/adminContentController.js';
 import * as adminAnalyticsController from '../controllers/adminAnalyticsController.js';
 import * as adminNotificationController from '../controllers/adminNotificationController.js';
@@ -20,12 +20,13 @@ router.post('/users', requireAdminOnly, adminController.createUser);
 router.put('/users/:id', requireAdminOnly, adminController.updateUser);
 router.delete('/users/:id', requireAdminOnly, adminController.deleteUser);
 
-// Appointments
-router.get('/appointments', adminAppointmentController.getAppointments);
-router.post('/appointments', adminAppointmentController.createAppointment);
-router.put('/appointments/:id', adminAppointmentController.updateAppointment);
-router.delete('/appointments/:id', adminAppointmentController.deleteAppointment);
-router.get('/appointments/slots', adminAppointmentController.getAvailableSlots);
+// Bookings Management
+// IMPORTANT: Specific routes (/bookings/slots) must come BEFORE dynamic routes (/bookings/:id)
+router.get('/bookings/slots', adminBookingController.getAvailableSlots);
+router.get('/bookings', adminBookingController.getBookings);
+router.post('/bookings', adminBookingController.createBooking);
+router.put('/bookings/:id', adminBookingController.updateBooking);
+router.delete('/bookings/:id', adminBookingController.deleteBooking);
 
 // Content Management - Modules
 router.get('/modules', adminContentController.getModules);
@@ -65,4 +66,3 @@ router.get('/notifications/unread-count', adminNotificationController.getUnreadC
 router.get('/activity-logs', adminNotificationController.getActivityLogs);
 
 export default router;
-

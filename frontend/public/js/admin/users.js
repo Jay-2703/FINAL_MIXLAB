@@ -1,365 +1,686 @@
-// Users Management JavaScript
+/**
+ * users.js
+ * Frontend behavior for MixLab Admin - Users page (Backend Integrated)
+ *
+ * Features:
+ * - Fetches users from backend API with pagination, search, and filtering
+ * - Create, update, view, and delete users via API
+ * - Form validation with password strength checks
+ * - Real-time notifications
+ * - Mobile responsive with sidebar toggle
+ */
 
-const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000';
+(() => {
+  // Configuration
+  // Detect if we're running on Live Server or served from backend
+  const isLiveServer = window.location.port === '5500' || window.location.port === '5501';
+  const API_BASE = isLiveServer ? 'http://localhost:3000/api/admin' : '/api/admin';
+  const PER_PAGE = 10;
 
-let currentPage = 1;
-let currentSearch = '';
-let currentStatus = '';
+  // DOM elements
+  const usersTableBody = document.getElementById("usersTableBody");
+  const userSearch = document.getElementById("userSearch");
+  const statusFilter = document.getElementById("statusFilter");
+  const addUserBtn = document.getElementById("addUserBtn");
+  const userModal = document.getElementById("userModal");
+  const modalBackdrop = document.getElementById("modalBackdrop");
+  const closeModalBtn = document.getElementById("closeModal");
+  const userForm = document.getElementById("userForm");
+  const formUserId = document.getElementById("formUserId");
+  const cancelBtn = document.getElementById("cancelBtn");
+  const passwordFieldLabel = document.getElementById("passwordFieldLabel");
+  const confirmPasswordLabel = document.getElementById("confirmPasswordLabel");
+  const togglePassword = document.getElementById("togglePassword");
+  const password = document.getElementById("password");
+  const confirmPassword = document.getElementById("confirmPassword");
+  const ruleLength = document.getElementById("rule-length");
+  const ruleUpper = document.getElementById("rule-upper");
+  const ruleLower = document.getElementById("rule-lower");
+  const ruleNumber = document.getElementById("rule-number");
+  const ruleSpecial = document.getElementById("rule-special");
+  const errPassword = document.getElementById("err-password");
+  const paginationContainer = document.getElementById("pagination");
+  const rowsInfo = document.getElementById("rowsInfo");
+  const menuToggle = document.getElementById("menuToggle");
+  const sidebar = document.getElementById("sidebar");
+  const sidebarOverlay = document.getElementById("sidebarOverlay");
+  const notificationBadge = document.getElementById("notificationBadge");
 
-// Load users
-async function loadUsers(page = 1, search = '', status = '') {
-  const token = localStorage.getItem('token');
-  if (!token) return;
+  // State
+  let currentPage = 1;
+  let totalPages = 1;
+  let totalUsers = 0;
+  let currentSearch = '';
+  let currentStatus = '';
 
-  try {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      limit: '10'
-    });
-    if (search) params.append('search', search);
-    if (status) params.append('status', status);
-
-    const response = await fetch(`${API_BASE_URL}/api/admin/users?${params}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to load users');
-    }
-
-    const result = await response.json();
-    const data = result.data;
-
-    displayUsers(data.users);
-    displayPagination(data.pagination);
-
-    currentPage = page;
-    currentSearch = search;
-    currentStatus = status;
-  } catch (error) {
-    console.error('Error loading users:', error);
-    showToast('Failed to load users', 'error');
-  }
-}
-
-// Display users in table
-function displayUsers(users) {
-  const tbody = document.getElementById('usersTableBody');
-  if (!tbody) return;
-
-  if (!users || users.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #a0a0a0;">No users found</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = users.map(user => {
-    const name = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
-    const initial = name.charAt(0).toUpperCase();
-    const completedModules = user.completed_lessons || 0;
-    const totalModules = user.total_lessons || 0;
-    const progressPercent = totalModules > 0 ? (completedModules / totalModules * 100).toFixed(0) : 0;
-    const level = user.total_points > 0 ? Math.floor(user.total_points / 100) + 1 : 1;
-    const status = user.is_verified ? 'active' : 'inactive';
-
-    return `
-      <tr>
-        <td>
-          <div class="user-cell">
-            <div class="user-avatar-table">${initial}</div>
-            <div class="user-name-email">
-              <div class="user-name-table">${name}</div>
-              <div class="user-email-table">${user.email || ''}</div>
-            </div>
-          </div>
-        </td>
-        <td>${user.email || ''}</td>
-        <td>
-          <div class="modules-progress">
-            <span>${completedModules}/${totalModules}</span>
-            <div class="progress-bar-small">
-              <div class="progress-fill-small" style="width: ${progressPercent}%"></div>
-            </div>
-          </div>
-        </td>
-        <td>
-          <div class="gamified-score">Lvl ${level} • ${user.total_points || 0} pts</div>
-        </td>
-        <td>
-          <span class="status-badge ${status}">${status}</span>
-        </td>
-        <td>
-          <div class="action-buttons">
-            <button class="btn-action edit" onclick="editUser(${user.id})">
-              <i class="fas fa-edit"></i> Edit
-            </button>
-            <button class="btn-action delete" onclick="deleteUser(${user.id})">
-              <i class="fas fa-trash"></i> Delete
-            </button>
-          </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
-}
-
-// Display pagination
-function displayPagination(pagination) {
-  const container = document.getElementById('pagination');
-  if (!container || !pagination) return;
-
-  const { page, pages, total } = pagination;
-  if (pages <= 1) {
-    container.innerHTML = '';
-    return;
-  }
-
-  let html = '';
-  
-  // Previous button
-  html += `<button ${page === 1 ? 'disabled' : ''} onclick="loadUsers(${page - 1}, '${currentSearch}', '${currentStatus}')">
-    <i class="fas fa-chevron-left"></i>
-  </button>`;
-
-  // Page numbers
-  for (let i = 1; i <= pages; i++) {
-    if (i === 1 || i === pages || (i >= page - 2 && i <= page + 2)) {
-      html += `<button class="${i === page ? 'active' : ''}" onclick="loadUsers(${i}, '${currentSearch}', '${currentStatus}')">${i}</button>`;
-    } else if (i === page - 3 || i === page + 3) {
-      html += '<span>...</span>';
-    }
-  }
-
-  // Next button
-  html += `<button ${page === pages ? 'disabled' : ''} onclick="loadUsers(${page + 1}, '${currentSearch}', '${currentStatus}')">
-    <i class="fas fa-chevron-right"></i>
-  </button>`;
-
-  container.innerHTML = html;
-}
-
-// Open add user modal
-function openAddUserModal() {
-  const modal = document.getElementById('userModal');
-  const form = document.getElementById('userForm');
-  const title = document.getElementById('modalTitle');
-  
-  if (modal && form && title) {
-    form.reset();
-    document.getElementById('userId').value = '';
-    title.textContent = 'Add New User';
-    document.getElementById('password').required = true;
-    modal.classList.add('active');
-  }
-}
-
-// Edit user
-async function editUser(userId) {
-  const token = localStorage.getItem('token');
-  if (!token) return;
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/admin/users?search=&page=1&limit=1000`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) throw new Error('Failed to fetch users');
-
-    const result = await response.json();
-    const user = result.data.users.find(u => u.id === userId);
-
-    if (!user) {
-      showToast('User not found', 'error');
-      return;
-    }
-
-    const modal = document.getElementById('userModal');
-    const form = document.getElementById('userForm');
-    const title = document.getElementById('modalTitle');
-
-    if (modal && form && title) {
-      document.getElementById('userId').value = user.id;
-      document.getElementById('username').value = user.username || '';
-      document.getElementById('firstName').value = user.first_name || '';
-      document.getElementById('lastName').value = user.last_name || '';
-      document.getElementById('email').value = user.email || '';
-      document.getElementById('role').value = user.role || 'student';
-      document.getElementById('isVerified').checked = user.is_verified || false;
-      document.getElementById('password').required = false;
-      title.textContent = 'Edit User';
-      modal.classList.add('active');
-    }
-  } catch (error) {
-    console.error('Error loading user:', error);
-    showToast('Failed to load user data', 'error');
-  }
-}
-
-// Delete user
-async function deleteUser(userId) {
-  if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-    return;
-  }
-
-  const token = localStorage.getItem('token');
-  if (!token) return;
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) {
-      const result = await response.json();
-      throw new Error(result.message || 'Failed to delete user');
-    }
-
-    showToast('User deleted successfully', 'success');
-    loadUsers(currentPage, currentSearch, currentStatus);
-  } catch (error) {
-    console.error('Error deleting user:', error);
-    showToast(error.message || 'Failed to delete user', 'error');
-  }
-}
-
-// Handle form submission
-function setupUserForm() {
-  const form = document.getElementById('userForm');
-  if (!form) return;
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
-    const userId = document.getElementById('userId').value;
-    const formData = {
-      username: document.getElementById('username').value,
-      first_name: document.getElementById('firstName').value,
-      last_name: document.getElementById('lastName').value,
-      email: document.getElementById('email').value,
-      role: document.getElementById('role').value,
-      is_verified: document.getElementById('isVerified').checked ? 1 : 0
-    };
-
-    const password = document.getElementById('password').value;
-    if (password) {
-      formData.password = password;
-    }
-
+  /* -------------------------
+     API Helper Functions
+     ------------------------- */
+  async function apiRequest(endpoint, options = {}) {
     try {
-      let response;
-      if (userId) {
-        // Update user
-        response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formData)
-        });
-      } else {
-        // Create user
-        if (!password) {
-          showToast('Password is required for new users', 'error');
-          return;
-        }
-        response = await fetch(`${API_BASE_URL}/api/admin/users`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formData)
-        });
-      }
+      const response = await fetch(`${API_BASE}${endpoint}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+        credentials: 'include', // Include cookies for authentication
+      });
+
+      const data = await response.json();
 
       if (!response.ok) {
-        const result = await response.json();
-        throw new Error(result.message || 'Failed to save user');
+        throw new Error(data.message || 'API request failed');
       }
 
-      showToast(userId ? 'User updated successfully' : 'User created successfully', 'success');
-      document.getElementById('userModal').classList.remove('active');
-      loadUsers(currentPage, currentSearch, currentStatus);
+      return data;
     } catch (error) {
-      console.error('Error saving user:', error);
-      showToast(error.message || 'Failed to save user', 'error');
+      console.error('API Error:', error);
+      showNotification(error.message || 'An error occurred', 'error');
+      throw error;
+    }
+  }
+
+  /* -------------------------
+     Fetch Users from Backend
+     ------------------------- */
+  async function fetchUsers(page = 1) {
+    try {
+      showLoading(true);
+      
+      const params = new URLSearchParams({
+        page: page,
+        limit: PER_PAGE,
+      });
+
+      if (currentSearch) {
+        params.append('search', currentSearch);
+      }
+
+      if (currentStatus) {
+        params.append('status', currentStatus);
+      }
+
+      const result = await apiRequest(`/users?${params.toString()}`);
+
+      if (result.success) {
+        renderTable(result.data.users, result.data.pagination);
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+      usersTableBody.innerHTML = `
+        <tr>
+          <td colspan="9" style="padding: 24px; text-align: center; color: #ef4444;">
+            Failed to load users. Please try again.
+          </td>
+        </tr>
+      `;
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  /* -------------------------
+     Rendering Functions
+     ------------------------- */
+  function renderTable(users, pagination) {
+    usersTableBody.innerHTML = "";
+    
+    currentPage = pagination.page;
+    totalPages = pagination.pages;
+    totalUsers = pagination.total;
+
+    if (!users || users.length === 0) {
+      const tr = document.createElement("tr");
+      const td = document.createElement("td");
+      td.colSpan = 9;
+      td.style.padding = "24px";
+      td.style.textAlign = "center";
+      td.textContent = "No users found.";
+      tr.appendChild(td);
+      usersTableBody.appendChild(tr);
+    } else {
+      users.forEach(u => {
+        const tr = document.createElement("tr");
+        tr.dataset.id = u.id;
+
+        // Format status badge
+        const statusBadge = u.is_verified 
+          ? '<span style="color: #10b981; font-size: 0.875rem;">●</span>' 
+          : '<span style="color: #ef4444; font-size: 0.875rem;">●</span>';
+
+        tr.innerHTML = `
+          <td>${escapeHtml(u.id)}</td>
+          <td>
+            <div class="user-cell">
+              <div class="user-initials">${initials(u)}</div>
+              <div class="user-info">
+                <div class="user-name">${escapeHtml(u.first_name + ' ' + u.last_name)}</div>
+                <div class="user-email">${escapeHtml(u.username || "")}</div>
+              </div>
+            </div>
+          </td>
+          <td>${escapeHtml(u.email || "")}</td>
+          <td>${escapeHtml(u.contact || "N/A")}</td>
+          <td>${formatDateDisplay(u.birthday)}</td>
+          <td>${escapeHtml(u.home_address || "N/A")}</td>
+          <td>${formatDateDisplay(u.created_at)}</td>
+          <td>${statusBadge} ${u.is_verified ? 'Active' : 'Inactive'}</td>
+          <td>
+            <div class="row-actions">
+              <button class="action-btn btn-view" title="View" data-action="view" aria-label="View ${escapeHtml(u.first_name)}">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="action-btn btn-edit" title="Edit" data-action="edit" aria-label="Edit ${escapeHtml(u.first_name)}">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="action-btn btn-delete" title="Delete" data-action="delete" aria-label="Delete ${escapeHtml(u.first_name)}">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        `;
+        usersTableBody.appendChild(tr);
+      });
+    }
+
+    // Update pagination info
+    const from = totalUsers === 0 ? 0 : (currentPage - 1) * PER_PAGE + 1;
+    const to = Math.min(currentPage * PER_PAGE, totalUsers);
+    rowsInfo.textContent = `Showing ${from}-${to} of ${totalUsers} users`;
+
+    renderPagination();
+  }
+
+  function renderPagination() {
+    paginationContainer.innerHTML = "";
+    
+    // Previous button
+    const prev = createPageButton("Prev", currentPage > 1, () => fetchUsers(currentPage - 1));
+    paginationContainer.appendChild(prev);
+
+    // Page numbers
+    const maxButtons = 7;
+    let start = 1;
+    let end = totalPages;
+    
+    if (totalPages > maxButtons) {
+      const mid = Math.floor(maxButtons / 2);
+      start = Math.max(1, currentPage - mid);
+      end = Math.min(totalPages, start + maxButtons - 1);
+      if (end - start + 1 < maxButtons) {
+        start = Math.max(1, end - maxButtons + 1);
+      }
+    }
+
+    for (let i = start; i <= end; i++) {
+      const btn = createPageButton(String(i), true, () => fetchUsers(i));
+      if (i === currentPage) {
+        btn.classList.add("active");
+        btn.disabled = true;
+      }
+      paginationContainer.appendChild(btn);
+    }
+
+    // Next button
+    const next = createPageButton("Next", currentPage < totalPages, () => fetchUsers(currentPage + 1));
+    paginationContainer.appendChild(next);
+  }
+
+  function createPageButton(text, enabled, onClick) {
+    const btn = document.createElement("button");
+    btn.className = "page-btn";
+    btn.textContent = text;
+    if (!enabled) {
+      btn.disabled = true;
+    } else {
+      btn.addEventListener("click", onClick);
+    }
+    return btn;
+  }
+
+  /* -------------------------
+     Modal Functions
+     ------------------------- */
+  function openUserModal({ mode = "create", userId = null } = {}) {
+    resetFormErrors();
+    
+    if (mode === "create") {
+      formUserId.value = "";
+      userForm.reset();
+      passwordFieldLabel.hidden = false;
+      confirmPasswordLabel.hidden = false;
+      password.required = true;
+      confirmPassword.required = true;
+      userForm.querySelectorAll("input, select").forEach((el) => (el.disabled = false));
+      document.getElementById("modalTitle").textContent = "Register User";
+    } else {
+      // Fetch user details for edit/view
+      fetchUserDetails(userId, mode);
+    }
+
+    userModal.setAttribute("aria-hidden", "false");
+    userModal.style.display = "flex";
+    setTimeout(() => {
+      (userForm.querySelector("input:not([type=hidden])") || closeModalBtn).focus();
+    }, 60);
+  }
+
+  async function fetchUserDetails(userId, mode) {
+    try {
+      // We'll need to fetch from the users list we already have
+      // or make a separate API call if you have a GET /api/admin/users/:id endpoint
+      const params = new URLSearchParams({ page: 1, limit: 1000 });
+      const result = await apiRequest(`/users?${params.toString()}`);
+      const user = result.data.users.find(u => u.id == userId);
+      
+      if (!user) {
+        showNotification('User not found', 'error');
+        closeUserModal();
+        return;
+      }
+
+      formUserId.value = user.id;
+      userForm.username.value = user.username || "";
+      userForm.first_name.value = user.first_name || "";
+      userForm.last_name.value = user.last_name || "";
+      userForm.email.value = user.email || "";
+      userForm.contact.value = user.contact || "";
+      userForm.birthday.value = user.birthday || "";
+      userForm.homeAddress.value = user.home_address || "";
+      userForm.role.value = user.role || "student";
+
+      if (mode === "view") {
+        passwordFieldLabel.hidden = true;
+        confirmPasswordLabel.hidden = true;
+        password.required = false;
+        confirmPassword.required = false;
+        userForm.querySelectorAll("input, select").forEach((el) => (el.disabled = true));
+        document.getElementById("modalTitle").textContent = "View User";
+      } else {
+        passwordFieldLabel.hidden = false;
+        confirmPasswordLabel.hidden = false;
+        password.required = false; // Optional for edit
+        confirmPassword.required = false;
+        userForm.querySelectorAll("input, select").forEach((el) => (el.disabled = false));
+        document.getElementById("modalTitle").textContent = "Edit User";
+      }
+    } catch (error) {
+      showNotification('Failed to load user details', 'error');
+      closeUserModal();
+    }
+  }
+
+  function closeUserModal() {
+    userModal.setAttribute("aria-hidden", "true");
+    userModal.style.display = "none";
+    resetFormErrors();
+    userForm.reset();
+  }
+
+  /* -------------------------
+     Form Submission
+     ------------------------- */
+  userForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    
+    const userId = formUserId.value;
+    const isCreate = !userId;
+    const { valid, data } = validateForm(!isCreate);
+    
+    if (!valid) return;
+
+    try {
+      showLoading(true);
+      
+      if (isCreate) {
+        // Create new user
+        await apiRequest('/users', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        });
+        showNotification('User created successfully', 'success');
+      } else {
+        // Update existing user
+        await apiRequest(`/users/${userId}`, {
+          method: 'PUT',
+          body: JSON.stringify(data),
+        });
+        showNotification('User updated successfully', 'success');
+      }
+      
+      closeUserModal();
+      fetchUsers(currentPage);
+    } catch (error) {
+      // Error already handled in apiRequest
+    } finally {
+      showLoading(false);
     }
   });
-}
 
-// Setup event listeners
-document.addEventListener('DOMContentLoaded', () => {
-  // Load initial users
-  loadUsers();
+  /* -------------------------
+     Delete User
+     ------------------------- */
+  async function handleDelete(id) {
+    const confirmed = confirm('Are you sure you want to delete this user? This action cannot be undone.');
+    
+    if (!confirmed) return;
 
-  // Add user button
-  const addBtn = document.getElementById('addUserBtn');
-  if (addBtn) {
-    addBtn.addEventListener('click', openAddUserModal);
+    try {
+      showLoading(true);
+      await apiRequest(`/users/${id}`, { method: 'DELETE' });
+      showNotification('User deleted successfully', 'success');
+      fetchUsers(currentPage);
+    } catch (error) {
+      // Error already handled in apiRequest
+    } finally {
+      showLoading(false);
+    }
   }
 
-  // Close modal buttons
-  const closeBtn = document.getElementById('closeModal');
-  const cancelBtn = document.getElementById('cancelBtn');
-  const modal = document.getElementById('userModal');
+  /* -------------------------
+     Row Actions
+     ------------------------- */
+  usersTableBody?.addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    
+    const tr = btn.closest("tr");
+    if (!tr) return;
+    
+    const id = tr.dataset.id;
+    const action = btn.dataset.action;
+    
+    if (!action) return;
+    
+    if (action === "view") {
+      openUserModal({ mode: "view", userId: id });
+    } else if (action === "edit") {
+      openUserModal({ mode: "edit", userId: id });
+    } else if (action === "delete") {
+      handleDelete(id);
+    }
+  });
 
-  if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
-      if (modal) modal.classList.remove('active');
-    });
-  }
+  /* -------------------------
+     Validation Functions
+     ------------------------- */
+  function validateForm(isEdit = false) {
+    resetFormErrors();
+    
+    const data = {
+      username: userForm.username.value.trim(),
+      first_name: userForm.first_name.value.trim(),
+      last_name: userForm.last_name.value.trim(),
+      email: userForm.email.value.trim(),
+      contact: userForm.contact.value.trim(),
+      birthday: userForm.birthday.value,
+      home_address: userForm.homeAddress.value.trim(),
+      role: userForm.role.value,
+    };
 
-  if (cancelBtn) {
-    cancelBtn.addEventListener('click', () => {
-      if (modal) modal.classList.remove('active');
-    });
-  }
+    let valid = true;
 
-  // Close modal on outside click
-  if (modal) {
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        modal.classList.remove('active');
+    if (!data.username) {
+      document.getElementById("err-username").textContent = "Username is required.";
+      valid = false;
+    }
+    if (!data.first_name) {
+      document.getElementById("err-firstName").textContent = "First name is required.";
+      valid = false;
+    }
+    if (!data.last_name) {
+      document.getElementById("err-lastName").textContent = "Last name is required.";
+      valid = false;
+    }
+    if (!data.email) {
+      document.getElementById("err-email").textContent = "Email is required.";
+      valid = false;
+    } else if (!validateEmail(data.email)) {
+      document.getElementById("err-email").textContent = "Enter a valid email address.";
+      valid = false;
+    }
+
+    // Password validation
+    const pw = password?.value || "";
+    const cpw = confirmPassword?.value || "";
+    
+    if (!isEdit && !pw) {
+      // Creating new user - password required
+      errPassword.textContent = "Password is required.";
+      valid = false;
+    } else if (pw) {
+      // Validate password strength if provided
+      const checks = passwordChecks(pw);
+      const allOk = Object.values(checks).every(Boolean);
+      
+      if (!allOk) {
+        errPassword.textContent = "Password does not meet required rules.";
+        valid = false;
       }
+      
+      if (pw !== cpw) {
+        document.getElementById("err-confirmPassword").textContent = "Passwords do not match.";
+        valid = false;
+      }
+      
+      if (allOk && pw === cpw) {
+        data.password = pw;
+      }
+    }
+
+    return { valid, data };
+  }
+
+  function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  function passwordChecks(pw) {
+    return {
+      length: pw.length >= 8,
+      upper: /[A-Z]/.test(pw),
+      lower: /[a-z]/.test(pw),
+      number: /[0-9]/.test(pw),
+      special: /[^A-Za-z0-9]/.test(pw),
+    };
+  }
+
+  function updatePasswordRuleIndicators(pw = "") {
+    const checks = passwordChecks(pw);
+    function mark(el, ok) {
+      el.querySelector?.("i")?.classList?.toggle("fa-check-circle", ok);
+      el.querySelector?.("i")?.classList?.toggle("fa-circle", !ok);
+      el.style.color = ok ? "var(--gold)" : "";
+    }
+    mark(ruleLength, checks.length);
+    mark(ruleUpper, checks.upper);
+    mark(ruleLower, checks.lower);
+    mark(ruleNumber, checks.number);
+    mark(ruleSpecial, checks.special);
+  }
+
+  function resetFormErrors() {
+    userForm.querySelectorAll(".error-text").forEach((el) => (el.textContent = ""));
+    errPassword.textContent = "";
+  }
+
+  /* -------------------------
+     Search & Filter
+     ------------------------- */
+  function debounce(fn, wait = 500) {
+    let t;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), wait);
+    };
+  }
+
+  const debouncedSearch = debounce(() => {
+    currentSearch = userSearch.value.trim();
+    fetchUsers(1);
+  }, 500);
+
+  userSearch?.addEventListener("input", debouncedSearch);
+  
+  statusFilter?.addEventListener("change", () => {
+    currentStatus = statusFilter.value;
+    fetchUsers(1);
+  });
+
+  /* -------------------------
+     UI Helpers
+     ------------------------- */
+  function showLoading(show) {
+    if (show) {
+      usersTableBody.innerHTML = `
+        <tr>
+          <td colspan="9" style="padding: 24px; text-align: center;">
+            <i class="fas fa-spinner fa-spin"></i> Loading...
+          </td>
+        </tr>
+      `;
+    }
+  }
+
+  function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 16px 24px;
+      background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+      color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      z-index: 10000;
+      animation: slideIn 0.3s ease;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.style.animation = 'slideOut 0.3s ease';
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
+  }
+
+  function initials(u) {
+    if (!u) return "";
+    const first = (u.first_name || "").trim().charAt(0);
+    const last = (u.last_name || "").trim().charAt(0);
+    return ((first || "") + (last || "")).toUpperCase() || (u.username || "").slice(0, 2).toUpperCase();
+  }
+
+  function escapeHtml(str) {
+    if (!str && str !== 0) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function formatDateDisplay(isoDate) {
+    if (!isoDate) return "N/A";
+    const d = new Date(isoDate);
+    return d.toLocaleDateString(undefined, { 
+      year: "numeric", 
+      month: "short", 
+      day: "numeric" 
     });
   }
 
-  // Search input
-  const searchInput = document.getElementById('userSearch');
-  if (searchInput) {
-    let searchTimeout;
-    searchInput.addEventListener('input', (e) => {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => {
-        loadUsers(1, e.target.value, currentStatus);
-      }, 500);
-    });
+  /* -------------------------
+     Password Visibility Toggle
+     ------------------------- */
+  togglePassword?.addEventListener("click", () => {
+    if (!password) return;
+    const type = password.getAttribute("type") === "password" ? "text" : "password";
+    password.setAttribute("type", type);
+    togglePassword.innerHTML = type === "text" 
+      ? '<i class="fas fa-eye-slash"></i>' 
+      : '<i class="fas fa-eye"></i>';
+  });
+
+  password?.addEventListener("input", (e) => updatePasswordRuleIndicators(e.target.value));
+
+  /* -------------------------
+     Sidebar Toggle
+     ------------------------- */
+  function openSidebar() {
+    sidebar.classList.add("open");
+    sidebarOverlay.hidden = false;
+    menuToggle.setAttribute("aria-expanded", "true");
   }
 
-  // Status filter
-  const statusFilter = document.getElementById('statusFilter');
-  if (statusFilter) {
-    statusFilter.addEventListener('change', (e) => {
-      loadUsers(1, currentSearch, e.target.value);
-    });
+  function closeSidebar() {
+    sidebar.classList.remove("open");
+    sidebarOverlay.hidden = true;
+    menuToggle.setAttribute("aria-expanded", "false");
   }
 
-  // Setup form
-  setupUserForm();
-});
+  menuToggle?.addEventListener("click", () => {
+    sidebar.classList.contains("open") ? closeSidebar() : openSidebar();
+  });
 
-// Make functions global for onclick handlers
-window.editUser = editUser;
-window.deleteUser = deleteUser;
-window.loadUsers = loadUsers;
+  sidebarOverlay?.addEventListener("click", closeSidebar);
 
+  /* -------------------------
+     Modal Close Handlers
+     ------------------------- */
+  modalBackdrop?.addEventListener("click", closeUserModal);
+  closeModalBtn?.addEventListener("click", closeUserModal);
+  cancelBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    closeUserModal();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      if (userModal && userModal.getAttribute("aria-hidden") === "false") {
+        closeUserModal();
+      } else if (sidebar.classList.contains("open")) {
+        closeSidebar();
+      }
+    }
+  });
+
+  /* -------------------------
+     Add User Button
+     ------------------------- */
+  addUserBtn?.addEventListener("click", () => openUserModal({ mode: "create" }));
+
+  /* -------------------------
+     Initialization
+     ------------------------- */
+  function init() {
+    // Add CSS for notifications
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Initial load
+    fetchUsers(1);
+  }
+
+  // Run init on DOMContentLoaded
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();

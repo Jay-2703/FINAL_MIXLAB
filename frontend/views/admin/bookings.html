@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MixLab Admin - Bookings</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+:root {
+  --mixlab-bg: #141c2b;
+  --mixlab-primary: #bfa45b;
+  --mixlab-accent: #ffd700;
+  --mixlab-accent-hover: #ffe44c;
+  --mixlab-card-bg: #1f1f1f;
+  --mixlab-muted: #bfc8d2;
+  --mixlab-table-head: rgba(255,255,255,0.08);
+  --mixlab-shadow: 0 6px 18px rgba(0,0,0,0.4);
+  --mixlab-sidebar-width: 250px;
+  --mixlab-sidebar-collapsed: 66px;
+  --mixlab-header-height: 64px;
+  --mixlab-sidebar-bg: #bfa45b;
+  --mixlab-sidebar-text: #0b1220;
+  --mixlab-header-bg: #161f2e;
+  --mixlab-body-bg: #141c2b;
+  --mixlab-border-color: rgba(255, 255, 255, 0.08);
+  --mixlab-glass-bg: rgba(255,255,255,0.04);
+  --mixlab-text-light: #ffffff;
+  --mixlab-text-dark: #0b1220;
+  --mixlab-search-bg: #ffffff;
+  --mixlab-search-text: #0b1220;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body { 
+  font-family:"Inter","Poppins",system-ui; 
+  background: var(--mixlab-body-bg); 
+  color: var(--mixlab-text-light);
+  overflow-x: hidden;
+}
+
+/* ------------------- Sidebar ------------------- */
+.admin-sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: var(--mixlab-sidebar-width);
+  height: 100vh;
+  background: var(--mixlab-sidebar-bg);
+  color: var(--mixlab-sidebar-text);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px 18px;
+  overflow-y: auto;
+  transition: width 0.25s ease, padding 0.25s ease;
+  z-index: 100;
+}
+
+body.collapsed .admin-sidebar { 
+  width: var(--mixlab-sidebar-collapsed); 
+  padding-left: 10px; 
+  padding-right: 10px; 
+}
+
+.profile-section { 
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+  padding-bottom: 12px; 
+  border-bottom: 1px solid rgba(11,18,32,0.2);
+}
+
+.avatar-circle { 
+  width: 44px; 
+  height: 44px; 
+  border-radius: 50%; 
+  background: #0b1b44; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  font-weight: 700; 
+  color: var(--mixlab-text-light);
+  flex-shrink: 0;
+}
+
+.profile-info { line-height: 1.4; transition: opacity 0.25s ease; }
+.profile-name { font-weight: 700; font-size: 14px; }
+.profile-role { font-size: 13px; color: rgba(11,18,32,0.7); }
+
+body.collapsed .profile-info { display: none; }
+
+.nav-menu { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 6px; 
+  margin-top: 6px; 
+}
+
+.nav-item { 
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+  background: transparent; 
+  border: none; 
+  color: inherit; 
+  padding: 10px 8px; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  text-align: left; 
+  font-size: 14px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.nav-item i, .nav-item svg { 
+  width: 20px; 
+  height: 20px; 
+  color: var(--mixlab-sidebar-text);
+  flex-shrink: 0;
+}
+
+.nav-item span { color: var(--mixlab-sidebar-text); }
+.nav-item.active { background: rgba(11,18,32,0.15); font-weight: 600; }
+.nav-item:hover { background: rgba(11,18,32,0.1); }
+
+body.collapsed .nav-item { justify-content: center; padding: 10px 6px; }
+body.collapsed .nav-item span { display: none; }
+
+.sidebar-logout { 
+  margin-top: auto; 
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+  background: transparent; 
+  border: none; 
+  color: inherit; 
+  padding: 10px 8px; 
+  cursor: pointer; 
+  font-size: 14px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.sidebar-logout:hover { background-color: #dc2626; color: #fff; }
+body.collapsed .sidebar-logout { justify-content: center; }
+body.collapsed .sidebar-logout span { display: none; }
+
+/* ------------------- Header ------------------- */
+.header {
+  position: fixed;
+  top: 0;
+  left: var(--mixlab-sidebar-width);
+  right: 0;
+  height: var(--mixlab-header-height);
+  background: var(--mixlab-header-bg);
+  border-bottom: 1px solid var(--mixlab-border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 90;
+  transition: left 0.25s ease;
+  box-shadow: var(--mixlab-shadow);
+}
+
+body.collapsed .header { left: var(--mixlab-sidebar-collapsed); }
+
+.header-left { display: flex; align-items: center; gap: 16px; }
+
+.menu-btn { 
+  display: none;
+  width: 44px; 
+  height: 44px; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  align-items: center; 
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--mixlab-accent);
+}
+
+.menu-btn svg { width: 28px; height: 28px; }
+
+.welcome-text { font-size: 20px; font-weight: 600; color: var(--mixlab-text-light); }
+.header-right { display: flex; align-items: center; gap: 12px; }
+
+/* ------------------- Main Content ------------------- */
+.main-content {
+  margin-left: var(--mixlab-sidebar-width);
+  margin-top: var(--mixlab-header-height);
+  padding: 24px;
+  min-height: calc(100vh - var(--mixlab-header-height));
+  transition: margin-left 0.25s ease;
+}
+
+body.collapsed .main-content { margin-left: var(--mixlab-sidebar-collapsed); }
+
+/* ------------------- Controls Header ------------------- */
+.bookings-header { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 24px; 
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.controls-left, .controls-right { 
+  display: flex; 
+  align-items: center; 
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-add { 
+  background: var(--mixlab-primary); 
+  color: var(--mixlab-text-light); 
+  padding: 10px 16px; 
+  border: none; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  font-weight: 600; 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.btn-add:hover {
+  background: var(--mixlab-accent);
+  color: var(--mixlab-text-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(191,164,91,0.3);
+}
+
+.btn-secondary { 
+  background: #ffffff; 
+  border: 1px solid var(--mixlab-primary); 
+  color: #0b1220; 
+  padding: 10px 16px; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  font-weight: 600; 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--mixlab-primary);
+  color: var(--mixlab-text-light);
+}
+
+.search-box { 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+  background: #ffffff; 
+  color: #0b1220; 
+  padding: 8px 12px; 
+  border-radius: 8px; 
+  border: 1px solid var(--mixlab-primary);
+  min-width: 200px;
+}
+
+.search-box i, .search-box svg { color: #6b7280; width: 18px; height: 18px; }
+.search-box input { 
+  border: none; 
+  outline: none; 
+  background: transparent; 
+  color: #0b1220; 
+  flex: 1;
+  font-size: 14px;
+}
+.search-box input::placeholder { color: #6b7280; }
+
+.filter-select { 
+  padding: 10px 12px; 
+  border-radius: 8px; 
+  border: 1px solid var(--mixlab-primary); 
+  background: #ffffff; 
+  color: #0b1220; 
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* ------------------- Table ------------------- */
+.table-wrapper { 
+  background: var(--mixlab-card-bg); 
+  padding: 24px; 
+  border-radius: 12px; 
+  box-shadow: var(--mixlab-shadow); 
+  overflow-x: auto;
+  border: 1px solid var(--mixlab-border-color);
+}
+
+.bookings-table { 
+  width: 100%; 
+  border-collapse: collapse; 
+}
+
+.bookings-table thead th { 
+  background: var(--mixlab-table-head); 
+  padding: 14px 12px; 
+  font-weight: 600; 
+  font-size: 13px; 
+  border-bottom: 1px solid var(--mixlab-border-color); 
+  text-align: left;
+  color: var(--mixlab-text-light);
+}
+
+.bookings-table tbody td { 
+  padding: 16px 12px; 
+  border-bottom: 1px solid rgba(255,255,255,0.04); 
+  font-size: 14px;
+  color: var(--mixlab-text-light);
+}
+
+.bookings-table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.bookings-table tbody tr:hover { 
+  background-color: rgba(255,255,255,0.03); 
+}
+
+.status-badge { 
+  display: inline-block; 
+  padding: 4px 10px; 
+  border-radius: 6px; 
+  font-size: 12px; 
+  font-weight: 600;
+}
+
+.status-active { 
+  background: rgba(40,199,111,0.15); 
+  color: #28c76f; 
+}
+
+.status-inactive { 
+  background: rgba(255,107,107,0.15); 
+  color: #ff6b6b; 
+}
+
+.action-icon { 
+  border: none; 
+  background: transparent; 
+  cursor: pointer; 
+  margin-right: 8px; 
+  font-size: 16px; 
+  color: var(--mixlab-primary);
+  transition: all 0.2s ease;
+  padding: 4px;
+}
+
+.action-icon:hover {
+  color: var(--mixlab-accent);
+  transform: scale(1.1);
+}
+
+/* ------------------- Table Footer ------------------- */
+.table-footer { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-top: 16px; 
+  padding-top: 16px; 
+  border-top: 1px solid var(--mixlab-border-color);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.rows-info { 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+  font-size: 14px; 
+}
+
+.rows-dropdown { 
+  padding: 6px 10px; 
+  border: 1px solid var(--mixlab-border-color); 
+  border-radius: 6px; 
+  font-size: 14px;
+  background: var(--mixlab-card-bg);
+  color: var(--mixlab-text-light);
+  cursor: pointer;
+}
+
+.pagination { 
+  display: flex; 
+  gap: 8px; 
+}
+
+.pagination button { 
+  padding: 8px 14px; 
+  border: 1px solid var(--mixlab-border-color); 
+  border-radius: 6px; 
+  background: var(--mixlab-card-bg); 
+  color: var(--mixlab-text-light); 
+  cursor: pointer; 
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.pagination button:hover:not(:disabled) {
+  background: rgba(191,164,91,0.1);
+  border-color: var(--mixlab-accent);
+}
+
+.pagination button:disabled { 
+  opacity: 0.5; 
+  cursor: not-allowed; 
+}
+
+/* ------------------- Responsive ------------------- */
+@media (max-width: 1200px) {
+  .bookings-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .controls-left, .controls-right {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .admin-sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .header {
+    left: 0;
+  }
+  
+  .main-content {
+    margin-left: 0;
+    padding: 16px;
+  }
+  
+  .menu-btn {
+    display: flex;
+  }
+  
+  .welcome-text {
+    font-size: 16px;
+  }
+  
+  .table-wrapper {
+    padding: 16px;
+  }
+  
+  .table-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .pagination {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .controls-left, .controls-right {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .btn-add, .btn-secondary, .search-box, .filter-select {
+    width: 100%;
+  }
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 99;
+}
+
+@media (max-width: 768px) {
+  .sidebar-overlay.active {
+    display: block;
+  }
+}
+  </style>
+</head>
+
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="sidebar" aria-label="Primary">
+      <div class="profile-section">
+        <div class="profile-avatar">
+          <div class="avatar-circle">AD</div>
+        </div>
+        <div class="profile-info">
+          <div class="profile-name">Admin User</div>
+          <div class="profile-role">Administrator</div>
+        </div>
+      </div>
+
+      <nav class="nav-menu" aria-label="Main navigation">
+        <button class="nav-item" data-nav="dashboard">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-item" data-nav="users">
+          <i data-lucide="users"></i>
+          <span>Users</span>
+        </button>
+        <button class="nav-item active" data-nav="bookings">
+          <i data-lucide="calendar"></i>
+          <span>Bookings</span>
+        </button>
+        <button class="nav-item" data-nav="modules">
+          <i data-lucide="book-open"></i>
+          <span>Modules & Lessons</span>
+        </button>
+        <button class="nav-item" data-nav="reports">
+          <i data-lucide="file-text"></i>
+          <span>Reports</span>
+        </button>
+        <button class="nav-item" data-nav="settings">
+          <i data-lucide="settings"></i>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <button class="sidebar-logout" id="logoutBtn">
+        <i data-lucide="log-out"></i>
+        <span>Logout</span>
+      </button>
+    </aside>
+
+    <!-- Sidebar Overlay (Mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <button id="menuToggle" class="menu-btn" aria-label="Toggle menu">
+          <i data-lucide="menu"></i>
+        </button>
+        <h2 class="welcome-text">Bookings</h2>
+      </div>
+      <div class="header-right">
+        <!-- Header right content can be added here -->
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="bookings-header">
+        <div class="controls-left">
+          <button class="btn-add">
+            <i data-lucide="plus"></i>
+            <span>Add Booking</span>
+          </button>
+          <div class="search-box">
+            <i data-lucide="search"></i>
+            <input type="text" placeholder="Search bookings..." />
+          </div>
+        </div>
+        <div class="controls-right">
+          <select class="filter-select">
+            <option>All Status</option>
+            <option>Pending</option>
+            <option>Confirmed</option>
+            <option>Cancelled</option>
+          </select>
+          <button class="btn-secondary">
+            <i data-lucide="filter"></i>
+            <span>Filter</span>
+          </button>
+          <button class="btn-secondary">
+            <i data-lucide="download"></i>
+            <span>Export</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="bookings-table">
+          <thead>
+            <tr>
+              <th>Booking ID</th>
+              <th>Customer</th>
+              <th>Service</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Amount</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="bookingTableBody">
+            <tr>
+              <td>#001</td>
+              <td>Juan Dela Cruz</td>
+              <td>Vocal Recording</td>
+              <td>2025-11-21</td>
+              <td><span class="status-badge status-active">Confirmed</span></td>
+              <td>₱1500</td>
+              <td>
+                <button class="action-icon" title="Edit"><i class="fa fa-pen"></i></button>
+                <button class="action-icon" title="Delete"><i class="fa fa-trash"></i></button>
+              </td>
+            </tr>
+            <tr>
+              <td>#002</td>
+              <td>Maria Clara</td>
+              <td>Band Recording</td>
+              <td>2025-11-22</td>
+              <td><span class="status-badge status-inactive">Pending</span></td>
+              <td>₱2800</td>
+              <td>
+                <button class="action-icon" title="Edit"><i class="fa fa-pen"></i></button>
+                <button class="action-icon" title="Delete"><i class="fa fa-trash"></i></button>
+              </td>
+            </tr>
+            <tr>
+              <td>#003</td>
+              <td>Pedro Santos</td>
+              <td>Mixing & Mastering</td>
+              <td>2025-11-23</td>
+              <td><span class="status-badge status-active">Confirmed</span></td>
+              <td>₱3200</td>
+              <td>
+                <button class="action-icon" title="Edit"><i class="fa fa-pen"></i></button>
+                <button class="action-icon" title="Delete"><i class="fa fa-trash"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="table-footer">
+          <div class="rows-info">
+            Show 
+            <select id="rowsPerPageSelect" class="rows-dropdown">
+              <option value="5" selected>5</option>
+              <option value="10">10</option>
+              <option value="15">15</option>
+              <option value="20">20</option>
+            </select> 
+            entries
+          </div>
+          <div class="pagination" id="pagination">
+            <button id="prevPage" disabled>&laquo; Previous</button>
+            <button id="nextPage">Next &raquo;</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const body = document.body;
+
+    // Sidebar toggle
+    menuToggle.addEventListener('click', () => {
+      const isSmallScreen = window.innerWidth <= 768;
+      if (isSmallScreen) {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
+      } else {
+        body.classList.toggle('collapsed');
+      }
+      if (typeof lucide !== 'undefined') lucide.replace();
+    });
+
+    // Close sidebar on overlay click (mobile)
+    sidebarOverlay.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('active');
+    });
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth > 768) return;
+      if (!sidebar.contains(e.target) && 
+          !menuToggle.contains(e.target) && 
+          sidebar.classList.contains('open')) {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+      }
+    });
+
+    // Navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', function() {
+        const page = this.getAttribute('data-nav');
+        console.log('Navigate to:', page);
+        // Add your navigation logic here
+      });
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      if (confirm('Are you sure you want to logout?')) {
+        console.log('Logging out...');
+        // Add your logout logic here
+      }
+    });
+
+    // Initialize lucide icons
+    if (typeof lucide !== 'undefined') {
+      lucide.replace();
+    }
+  </script>
+</body>
+</html>

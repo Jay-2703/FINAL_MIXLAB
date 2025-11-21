@@ -10,7 +10,7 @@ dotenv.config();
 class EmailService {
   constructor() {
     this.apiKey = process.env.BREVO_API_KEY;
-    this.senderEmail = process.env.BREVO_SENDER_EMAIL || 'noreply@mixlabstudio.com';
+    this.senderEmail = process.env.BREVO_SENDER_EMAIL ||'hiraya.11127@gmail.com';
     this.senderName = process.env.BREVO_SENDER_NAME || 'MixLab Studio';
     this.apiUrl = 'https://api.brevo.com/v3/smtp/email';
     

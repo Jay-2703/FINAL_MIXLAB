@@ -22,30 +22,30 @@ export const createRateLimiter = (windowMs, max, message) => {
   });
 };
 
-// Specific rate limiters for different endpoints
 export const loginRateLimiter = createRateLimiter(
-  15 * 60 * 1000, // 15 minutes
-  5, // 5 attempts per 15 minutes
+  15 * 60 * 1000,
+  9999,
   'Too many login attempts. Please try again after 15 minutes.'
 );
 
 export const registrationRateLimiter = createRateLimiter(
-  60 * 60 * 1000, // 1 hour
-  3, // 3 registrations per hour per IP
+  60 * 60 * 1000,
+  9999,
   'Too many registration attempts. Please try again later.'
 );
 
 export const otpRateLimiter = createRateLimiter(
-  15 * 60 * 1000, // 15 minutes
-  5, // 5 OTP requests per 15 minutes
+  15 * 60 * 1000,
+  9999,
   'Too many OTP requests. Please try again after 15 minutes.'
 );
 
 export const passwordResetRateLimiter = createRateLimiter(
-  60 * 60 * 1000, // 1 hour
-  3, // 3 password reset attempts per hour
+  60 * 60 * 1000,
+  9999,
   'Too many password reset attempts. Please try again later.'
 );
+
 
 /**
  * Brute-force protection: Track failed login attempts

@@ -1,4 +1,3 @@
-
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
@@ -14,7 +13,6 @@ import webhookRoutes from './src/routes/webhookRoutes.js';
 import lessonRoutes from './src/routes/lessonRoutes.js';
 import quizRoutes from './src/routes/quizRoutes.js';
 import adminRoutes from './src/routes/adminRoutes.js';
-// import paymentRoutes from './routes/paymentRoutes.js'; // Uncomment if payment routes exist
 
 // Import Socket.IO configuration
 import { initializeSocket } from './src/config/socket.js';
@@ -37,8 +35,22 @@ app.set('trust proxy', 1);
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true, // Allow cookies
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5500',  // ✅ Already there
+      'http://localhost:5500',   // ✅ Already there
+      process.env.FRONTEND_URL || 'http://localhost:3000'
+    ];
+   
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
@@ -51,18 +63,37 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Cookie parser middleware (for JWT tokens in cookies)
 app.use(cookieParser());
 
-// Serve static files from frontend directory
-const frontendPath = path.join(__dirname, '../frontend');
-app.use(express.static(frontendPath));
+// ✅ FIXED: Serve static files ONLY from frontend/public
+const frontendPublicPath = path.join(__dirname, '../frontend/public');
+app.use(express.static(frontendPublicPath, {
+  maxAge: '1h',
+  etag: false
+}));
 
-// API Routes
+// ALSO serve view files under /frontend/views for direct links used by frontend
+const frontendViewsPath = path.join(__dirname, '../frontend/views');
+app.use('/frontend/views', express.static(frontendViewsPath, {
+  maxAge: '1h',
+  etag: false
+}));
+
+// Debug middleware to log static file requests
+app.use((req, res, next) => {
+  if (process.env.DEBUG_STATIC === 'true') {
+    if (req.path.includes('.css') || req.path.includes('.js') || req.path.includes('.woff')) {
+      console.log(`📁 Static: ${req.path}`);
+    }
+  }
+  next();
+});
+
+// API Routes (MUST be before fallback)
 app.use('/api/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/lessons', lessonRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/admin', adminRoutes);
-// app.use('/api/payments', paymentRoutes); // Uncomment if payment routes exist
 
 // Health check
 app.get('/health', (req, res) => {
@@ -81,6 +112,15 @@ export {
   getConnectedClientsCount
 } from './src/config/socket.js';
 
+// ✅ IMPORTANT: Fallback for SPA routing (catch undefined routes and serve index.html)
+app.get(/^(?!\/api\/).*/, (req, res) => {
+  res.sendFile(path.join(frontendPublicPath, 'index.html'), (err) => {
+    if (err) {
+      res.status(404).json({ success: false, message: 'Not found' });
+    }
+  });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Server Error:', err);
@@ -91,11 +131,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ success: false, message: 'Route not found' });
-});
-
 // Start server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
@@ -104,4 +139,5 @@ server.listen(PORT, () => {
   console.log(`🌐 Frontend: http://localhost:${PORT}`);
   console.log(`🔧 API: http://localhost:${PORT}/api`);
   console.log(`🔌 Socket.IO: http://localhost:${PORT} (ws://localhost:${PORT})`);
+  console.log(`📂 Serving static files from: ${frontendPublicPath}`);
 });

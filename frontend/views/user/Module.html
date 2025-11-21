@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MixLab Studio</title>
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Link to external CSS file -->
+  <link rel="stylesheet" href="/frontend/public/css/module.css">
+</head>
+<body>
+
+  <!-- ============================================
+       WELCOME PAGE
+       ============================================ -->
+  <div id="welcomePage" class="page" style="display: block;">
+    <div class="welcome-container">
+      <h1 class="welcome-title">🎵 Welcome to MixLab Studio</h1>
+      <p class="welcome-subtitle">Choose your learning path</p>
+
+      <div class="mode-selection">
+        <div class="mode-card play-card" onclick="navigateTo('play')">
+          <div class="mode-icon">🎮</div>
+          <div class="mode-title">Play</div>
+          <div class="mode-description">
+            Test your skills with interactive quizzes and games. Earn points, unlock achievements, and challenge yourself!
+          </div>
+        </div>
+
+        <div class="mode-card learn-card" onclick="navigateTo('lessons')">
+          <div class="mode-icon">📚</div>
+          <div class="mode-title">Learn</div>
+          <div class="mode-description">
+            Study at your own pace with complete lessons. Watch videos, read content, and master music production.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       LESSONS PAGE (Select Instrument)
+       ============================================ -->
+  <div id="lessonsPage" class="page" style="display: none;">
+    <div class="learn-container">
+      <a href="#" onclick="navigateTo('welcome'); return false;" class="back-button">← Back</a>
+
+      <div class="page-header">
+        <h1 class="page-title">📚 Choose Your Instrument</h1>
+        <p class="page-subtitle">Select an instrument to start learning</p>
+      </div>
+
+      <!-- User Progress Summary -->
+      <div id="progressSummary" class="progress-summary">
+        <div class="progress-stats">
+          <div class="stat-item">
+            <div class="stat-value" id="totalPoints">0</div>
+            <div class="stat-label">Total Points</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="completedLessons">0</div>
+            <div class="stat-label">Lessons Completed</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="progressPercent">0%</div>
+            <div class="stat-label">Overall Progress</div>
+          </div>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressBar"></div>
+        </div>
+      </div>
+
+      <!-- Instruments Grid -->
+      <div class="instruments-grid" id="instrumentsGrid">
+        <div class="instrument-card" data-instrument="Piano" data-instrument-id="1">
+          <div class="instrument-icon">🎹</div>
+          <div class="instrument-name">Piano</div>
+          <div class="instrument-description">
+            Learn piano techniques, theory, and masterpieces from beginner to advanced
+          </div>
+        </div>
+
+        <div class="instrument-card" data-instrument="Guitar" data-instrument-id="2">
+          <div class="instrument-icon">🎸</div>
+          <div class="instrument-name">Guitar</div>
+          <div class="instrument-description">
+            Master guitar chords, scales, and playing techniques step by step
+          </div>
+        </div>
+
+        <div class="instrument-card" data-instrument="Music Theory" data-instrument-id="3">
+          <div class="instrument-icon">🎼</div>
+          <div class="instrument-name">Music Theory</div>
+          <div class="instrument-description">
+            Understand music fundamentals, notation, harmony, and composition
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       LESSON MODULES PAGE
+       ============================================ -->
+  <div id="modulesPage" class="page" style="display: none;">
+    <div class="modules-container">
+      <div class="header">
+        <a href="#" onclick="navigateTo('lessons'); return false;" class="back-button">← Back to Instruments</a>
+        <h1 class="instrument-title" id="instrumentTitle">🎹 Piano</h1>
+        <p class="instrument-subtitle">Choose a learning module to begin your journey</p>
+      </div>
+
+      <div id="modulesContent">
+        <div class="loading">Loading modules...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       LESSON LIST PAGE
+       ============================================ -->
+  <div id="lessonListPage" class="page" style="display: none;">
+    <div class="container">
+      <a href="#" onclick="navigateTo('modules'); return false;" class="back-button">← Back</a>
+      <h1 id="lessonListTitle">Beginner Modules</h1>
+
+      <div class="modules-grid" id="lessonsGrid"></div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       LESSON CONTENT PAGE
+       ============================================ -->
+  <div id="lessonContentPage" class="page" style="display: none;">
+    <div class="lesson-container">
+      <div class="header">
+        <div class="header-left">
+          <a href="#" onclick="navigateTo('lessonList'); return false;" class="back-button">← Back to Lessons</a>
+          <h1 class="lesson-title" id="lessonTitle">Loading...</h1>
+          <div class="lesson-meta">
+            <span id="lessonType">📄 Video</span>
+            <span id="lessonDuration">⏱️ 15 min</span>
+            <span id="lessonModule">📚 Module 1</span>
+          </div>
+        </div>
+        <div class="progress-indicator">
+          <div class="lesson-progress" id="lessonProgress">Lesson 1 of 8</div>
+          <div class="progress-circle" id="lessonNumber">1</div>
+        </div>
+      </div>
+
+      <div id="contentArea">
+        <div class="loading">Loading lesson content...</div>
+      </div>
+
+      <div class="navigation-buttons" id="navigationButtons" style="display: none;">
+        <button class="nav-button btn-previous" id="btnPrevious">
+          <span>←</span>
+          <span>Previous Lesson</span>
+        </button>
+        <button class="nav-button btn-complete" id="btnComplete">
+          <span>✓</span>
+          <span>Mark as Complete</span>
+        </button>
+        <button class="nav-button btn-next" id="btnNext">
+          <span>Next Lesson</span>
+          <span>→</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Completion Overlay -->
+    <div class="completion-overlay" id="completionOverlay">
+      <div class="completion-card">
+        <div class="completion-icon">🎉</div>
+        <div class="completion-title">Lesson Complete!</div>
+        <div class="completion-message">
+          Great job! You've successfully completed this lesson and earned points.
+        </div>
+        <div class="points-earned">+50 Points 🌟</div>
+        <div class="completion-buttons">
+          <button class="completion-btn btn-continue-next" id="btnContinueNext">
+            Continue to Next Lesson
+          </button>
+          <button class="completion-btn btn-back-to-list" id="btnBackToList">
+            Back to Lessons
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       JAVASCRIPT - ALL FUNCTIONALITY
+       ============================================ -->
+  <script>
+    // ====================================
+    // GLOBAL VARIABLES & CONFIG
+    // ====================================
+    const API_BASE_URL = window.API_BASE_URL || 'http://localhost:3000';
+    let currentPage = 'welcome';
+    let selectedInstrument = '';
+    let selectedInstrumentId = '';
+    let selectedModuleId = '';
+    let selectedLessonId = '';
+
+    // ====================================
+    // NAVIGATION SYSTEM
+    // ====================================
+    function navigateTo(page) {
+      // Hide all pages
+      document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+      
+      // Show requested page
+      currentPage = page;
+      
+      switch(page) {
+        case 'welcome':
+          document.getElementById('welcomePage').style.display = 'block';
+          break;
+        case 'lessons':
+          document.getElementById('lessonsPage').style.display = 'block';
+          loadUserProgress();
+          break;
+        case 'modules':
+          document.getElementById('modulesPage').style.display = 'block';
+          loadModules();
+          break;
+        case 'lessonList':
+          document.getElementById('lessonListPage').style.display = 'block';
+          loadLessonList();
+          break;
+        case 'lessonContent':
+          document.getElementById('lessonContentPage').style.display = 'block';
+          loadLessonContent();
+          break;
+        case 'play':
+          alert('Play mode coming soon!');
+          break;
+      }
+    }
+
+    // ====================================
+    // LESSONS PAGE - INSTRUMENT SELECTION
+    // ====================================
+    async function loadUserProgress() {
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/lessons/progress`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) displayProgress(result.data);
+        }
+      } catch (error) {
+        console.error('Error loading progress:', error);
+      }
+    }
+
+    function displayProgress(data) {
+      const summaryEl = document.getElementById('progressSummary');
+      summaryEl.style.display = 'block';
+
+      document.getElementById('totalPoints').textContent = data.points?.total_points || 0;
+      document.getElementById('completedLessons').textContent = data.completedLessons || 0;
+      document.getElementById('progressPercent').textContent = `${data.progressPercentage || 0}%`;
+      document.getElementById('progressBar').style.width = `${data.progressPercentage || 0}%`;
+    }
+
+    // Instrument card click handlers
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.instrument-card').forEach(card => {
+        card.addEventListener('click', () => {
+          selectedInstrument = card.dataset.instrument;
+          selectedInstrumentId = card.dataset.instrumentId;
+          navigateTo('modules');
+        });
+      });
+    });
+
+    // ====================================
+    // MODULES PAGE
+    // ====================================
+    function loadModules() {
+      const icons = {
+        'Piano': '🎹',
+        'Guitar': '🎸',
+        'Music Theory': '🎼'
+      };
+      document.getElementById('instrumentTitle').textContent =
+        `${icons[selectedInstrument] || '🎵'} ${selectedInstrument}`;
+
+      const mockModules = {
+        beginner: [
+          {
+            id: 1,
+            number: 'Module 1',
+            title: 'Getting Started',
+            description: 'Learn the basics and fundamental concepts to begin your journey',
+            lessons: 8,
+            progress: 100,
+            status: 'completed',
+            locked: false
+          },
+          {
+            id: 2,
+            number: 'Module 2',
+            title: 'Basic Techniques',
+            description: 'Master essential playing techniques and proper form',
+            lessons: 10,
+            progress: 60,
+            status: 'in-progress',
+            locked: false
+          },
+          {
+            id: 3,
+            number: 'Module 3',
+            title: 'Reading Music',
+            description: 'Understand notation, rhythm, and how to read sheet music',
+            lessons: 12,
+            progress: 0,
+            status: 'locked',
+            locked: true
+          }
+        ]
+      };
+
+      displayModules(mockModules);
+    }
+
+    function displayModules(modules) {
+      const content = document.getElementById('modulesContent');
+
+      let html = `<div class="modules-grid">`;
+      modules.beginner.forEach(m => {
+        html += createModuleCard(m);
+      });
+      html += `</div>`;
+
+      content.innerHTML = html;
+      attachModuleListeners();
+    }
+
+    function createModuleCard(module) {
+      const statusClasses = {
+        completed: "status-completed",
+        "in-progress": "status-in-progress",
+        locked: "status-locked"
+      };
+
+      const statusIcons = { completed: "✓", "in-progress": "⟳", locked: "🔒" };
+      const statusText = { completed: "Completed", "in-progress": "In Progress", locked: "Locked" };
+
+      return `
+        <div class="module-card ${module.locked ? "locked" : ""}" data-module-id="${module.id}">
+          ${module.locked ? `<div class="lock-icon">🔒</div>` : ""}
+          <div class="module-number">${module.number}</div>
+          <div class="module-title">${module.title}</div>
+          <div class="module-description">${module.description}</div>
+          ${module.progress > 0 ? 
+            `<div class="progress-bar"><div class="progress-fill" style="width:${module.progress}%"></div></div>` 
+            : ""}
+          <div class="module-stats">
+            <div class="module-lessons">${module.lessons} lessons</div>
+            <div class="module-status ${statusClasses[module.status]}">
+              <span>${statusIcons[module.status]}</span>
+              <span>${statusText[module.status]}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function attachModuleListeners() {
+      document.querySelectorAll('.module-card:not(.locked)').forEach(card => {
+        card.addEventListener('click', () => {
+          selectedModuleId = card.dataset.moduleId;
+          navigateTo('lessonList');
+        });
+      });
+    }
+
+    // ====================================
+    // LESSON LIST PAGE
+    // ====================================
+    function loadLessonList() {
+      const modules = [
+        { id: 1, title: "Introduction to Music Production", description: "Learn the fundamentals of audio, DAWs, and workflow setup." },
+        { id: 2, title: "Recording Basics", description: "Learn about microphones, gain staging, and quality recording techniques." },
+        { id: 3, title: "Understanding EQ", description: "Shape the tone of instruments and vocals using equalization." },
+        { id: 4, title: "Basic Mixing", description: "Introduction to balancing, panning, and simple effects." },
+        { id: 5, title: "Compression Essentials", description: "Control dynamics and make your mix punchy and clean." }
+      ];
+
+      const html = modules.map(module => `
+        <div class="module-card" onclick="goToLesson(${module.id})">
+          <div class="module-title">${module.title}</div>
+          <div class="module-description">${module.description}</div>
+          <a class="start-btn" href="#" onclick="event.stopPropagation(); goToLesson(${module.id}); return false;">Start Module</a>
+        </div>
+      `).join('');
+
+      document.getElementById('lessonsGrid').innerHTML = html;
+    }
+
+    function goToLesson(lessonId) {
+      selectedLessonId = lessonId;
+      navigateTo('lessonContent');
+    }
+
+    // ====================================
+    // LESSON CONTENT PAGE
+    // ====================================
+    async function loadLessonContent() {
+      try {
+        await new Promise(resolve => setTimeout(resolve, 600));
+        
+        const mockLessonData = {
+          id: parseInt(selectedLessonId) || 1,
+          number: parseInt(selectedLessonId) || 1,
+          title: 'Introduction to Piano',
+          type: 'Video',
+          duration: '15 min',
+          module: 'Module 1',
+          totalLessons: 8,
+          hasVideo: true,
+          videoUrl: 'https://example.com/video.mp4',
+          content: {
+            overview: 'Welcome to your first piano lesson! In this lesson, you\'ll learn about the history of the piano, its parts, and why it\'s such a wonderful instrument to learn.',
+            sections: [
+              {
+                title: 'History of the Piano',
+                content: 'The piano was invented around 1700 by Bartolomeo Cristofori in Italy. Originally called the "pianoforte" (meaning soft-loud), it was revolutionary because it could play both soft and loud notes, unlike the harpsichord which preceded it.'
+              },
+              {
+                title: 'Parts of the Piano',
+                content: 'A piano consists of several key components: the keyboard with 88 keys (52 white and 36 black), the pedals (usually three), the soundboard that amplifies vibrations, the strings that produce sound, and the hammers that strike the strings.'
+              }
+            ],
+            keyPoints: [
+              'The piano has 88 keys in total',
+              'It was invented around 1700 in Italy',
+              'The name "pianoforte" means soft-loud in Italian',
+              'Understanding the instrument helps you play it better'
+            ],
+            practice: {
+              title: 'Try This',
+              description: 'If you have access to a piano, take a moment to examine it closely. Count the white and black keys. Try pressing the pedals to hear how they affect the sound. Familiarize yourself with the instrument\'s physical presence.'
+            }
+          },
+          hasPrevious: parseInt(selectedLessonId) > 1,
+          hasNext: parseInt(selectedLessonId) < 5,
+          isCompleted: false
+        };
+        
+        displayLesson(mockLessonData);
+      } catch (error) {
+        console.error('Error loading lesson:', error);
+        document.getElementById('contentArea').innerHTML = `
+          <div class="content-area">
+            <p style="text-align: center; color: #999;">Failed to load lesson content. Please try again.</p>
+          </div>
+        `;
+      }
+    }
+
+    function displayLesson(lesson) {
+      // Update header
+      document.getElementById('lessonTitle').textContent = lesson.title;
+      document.getElementById('lessonType').textContent = `${getTypeIcon(lesson.type)} ${lesson.type}`;
+      document.getElementById('lessonDuration').textContent = `⏱️ ${lesson.duration}`;
+      document.getElementById('lessonModule').textContent = `📚 ${lesson.module}`;
+      document.getElementById('lessonProgress').textContent = `Lesson ${lesson.number} of ${lesson.totalLessons}`;
+      document.getElementById('lessonNumber').textContent = lesson.number;
+      
+      // Build content HTML
+      let contentHTML = '<div class="content-area">';
+      
+      if (lesson.hasVideo) {
+        contentHTML += `
+          <div class="video-container">
+            <div class="video-placeholder">
+              <div class="play-icon">▶</div>
+              <div>Video Player</div>
+              <div style="font-size: 14px; margin-top: 10px; opacity: 0.7;">
+                Video URL: ${lesson.videoUrl}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      
+      if (lesson.content.overview) {
+        contentHTML += `
+          <div class="content-section">
+            <div class="section-content">
+              <p>${lesson.content.overview}</p>
+            </div>
+          </div>
+        `;
+      }
+      
+      if (lesson.content.sections) {
+        lesson.content.sections.forEach(section => {
+          contentHTML += `
+            <div class="content-section">
+              <h2 class="section-title">${section.title}</h2>
+              <div class="section-content">
+                <p>${section.content}</p>
+              </div>
+            </div>
+          `;
+        });
+      }
+      
+      if (lesson.content.keyPoints) {
+        contentHTML += `
+          <div class="key-points">
+            <div class="key-points-title">💡 Key Takeaways</div>
+            <ul>
+              ${lesson.content.keyPoints.map(point => `<li>${point}</li>`).join('')}
+            </ul>
+          </div>
+        `;
+      }
+      
+      if (lesson.content.practice) {
+        contentHTML += `
+          <div class="practice-exercise">
+            <div class="exercise-title">🎯 ${lesson.content.practice.title}</div>
+            <div class="exercise-content">
+              ${lesson.content.practice.description}
+            </div>
+          </div>
+        `;
+      }
+      
+      contentHTML += '</div>';
+      document.getElementById('contentArea').innerHTML = contentHTML;
+      
+      // Show navigation buttons
+      document.getElementById('navigationButtons').style.display = 'flex';
+      document.getElementById('btnPrevious').disabled = !lesson.hasPrevious;
+      document.getElementById('btnNext').disabled = !lesson.hasNext;
+      
+      if (lesson.isCompleted) {
+        const btnComplete = document.getElementById('btnComplete');
+        btnComplete.textContent = '✓ Completed';
+        btnComplete.style.background = '#4caf50';
+      }
+      
+      attachLessonListeners(lesson);
+    }
+
+    function getTypeIcon(type) {
+      const icons = {
+        'Video': '🎥',
+        'Interactive': '💡',
+        'Practice': '🎹',
+        'Quiz': '📝',
+        'Reading': '📖'
+      };
+      return icons[type] || '📄';
+    }
+
+    function attachLessonListeners(lesson) {
+      document.getElementById('btnPrevious').onclick = () => {
+        if (lesson.hasPrevious) {
+          selectedLessonId = (parseInt(selectedLessonId) - 1).toString();
+          loadLessonContent();
+        }
+      };
+      
+      document.getElementById('btnComplete').onclick = async () => {
+        await markLessonComplete();
+      };
+      
+      document.getElementById('btnNext').onclick = () => {
+        if (lesson.hasNext) {
+          goToNextLesson();
+        }
+      };
+      
+      document.getElementById('btnContinueNext').onclick = () => {
+        goToNextLesson();
+      };
+      
+      document.getElementById('btnBackToList').onclick = () => {
+        navigateTo('lessonList');
+      };
+    }
+
+    async function markLessonComplete() {
+      try {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        document.getElementById('completionOverlay').style.display = 'flex';
+      } catch (error) {
+        console.error('Error marking lesson complete:', error);
+        alert('Failed to mark lesson as complete. Please try again.');
+      }
+    }
+
+    function goToNextLesson() {
+      selectedLessonId = (parseInt(selectedLessonId) + 1).toString();
+      document.getElementById('completionOverlay').style.display = 'none';
+      loadLessonContent();
+    }
+
+    // ====================================
+    // INITIALIZATION
+    // ====================================
+    document.addEventListener('DOMContentLoaded', () => {
+      navigateTo('welcome');
+    });
+  </script>
+
+</body>
+</html>

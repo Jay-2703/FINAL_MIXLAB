@@ -9,61 +9,71 @@ document.addEventListener('DOMContentLoaded', () => {
   // ===================================================================
   
   const accountLink = document.getElementById('account-link');
-  const logoutLink = document.getElementById('logout-link');
-  const mobileAccountBtn = document.querySelector('.mobile-account-btn');
-  const loginDropdown = document.getElementById('loginDropdown');
+  const mobileAccountBtn = document.getElementById('mobile-account-btn');
 
   // Helper: Get display name from user object
   function getDisplayName(user) {
     if (!user) return null;
-    return user.username || user.name || user.fullname || user.email || null;
+    // Prefer human-friendly `name` (first + last), then username, then email
+    return user.name || user.username || user.fullname || user.email || null;
   }
-function initAuth() {
-  try {
-    const userJson = localStorage.getItem('user');
 
-    if (userJson) {
-      // --- USER IS LOGGED IN ---
-      const user = JSON.parse(userJson);
-      const displayName = getDisplayName(user);
+  // Helper: Add user avatar (plain color, no gradient, no border)
+  function addUserAvatar(element, displayName) {
+    const initial = displayName.charAt(0).toUpperCase();
+    const avatarHtml = `<span class="user-avatar">${initial}</span>`;
+    element.innerHTML = avatarHtml + displayName;
+  }
 
-      // Show notification bell
-      const notifWrapper = document.getElementById("notif-wrapper");
-      if (notifWrapper) notifWrapper.style.display = "inline-block";
+  function initAuth() {
+    try {
+      const userJson = localStorage.getItem('user');
 
-      if (displayName) {
+      if (userJson) {
+        // --- USER IS LOGGED IN ---
+        const user = JSON.parse(userJson);
+        const displayName = getDisplayName(user);
+
+        // Show notification bell
+        const notifWrapper = document.getElementById("notif-wrapper");
+        if (notifWrapper) notifWrapper.style.display = "inline-block";
+
+        if (displayName) {
+          // Desktop account link - goes to profile
+          if (accountLink) {
+            accountLink.setAttribute('href', '/frontend/views/user/profile.html');
+            accountLink.setAttribute('title', 'View your profile');
+            addUserAvatar(accountLink, displayName);
+          }
+
+          // Mobile account button - goes to profile
+          if (mobileAccountBtn) {
+            mobileAccountBtn.textContent = displayName;
+            mobileAccountBtn.setAttribute('href', '/frontend/views/user/profile.html');
+          }
+        }
+
+      } else {
+        // --- USER IS NOT LOGGED IN ---
         if (accountLink) {
-          accountLink.textContent = displayName;
-          accountLink.setAttribute('href', '../Account-created/profile.html');
-          accountLink.setAttribute('title', 'View your profile');
-          addUserAvatar(accountLink, displayName);
+          accountLink.textContent = 'Log in';
+          accountLink.setAttribute('href', '/frontend/views/auth/login.html');
         }
-
+        
         if (mobileAccountBtn) {
-          mobileAccountBtn.textContent = displayName;
-          mobileAccountBtn.setAttribute('href', '../Account-created/profile.html');
+          mobileAccountBtn.textContent = 'Log in';
+          mobileAccountBtn.setAttribute('href', '/frontend/views/auth/login.html');
         }
 
-        if (logoutLink) logoutLink.style.display = 'inline-block';
+        // Hide notification bell
+        const notifWrapper = document.getElementById("notif-wrapper");
+        if (notifWrapper) notifWrapper.style.display = "none";
       }
 
-    } else {
-      // --- USER IS NOT LOGGED IN ---
-      if (accountLink) accountLink.setAttribute('href', '/frontend/views/auth/login.html');
-      if (mobileAccountBtn) mobileAccountBtn.setAttribute('href', '/frontend/views/auth/login.html');
-
-      // Hide notification bell
-      const notifWrapper = document.getElementById("notif-wrapper");
-      if (notifWrapper) notifWrapper.style.display = "none";
-
-      if (logoutLink) logoutLink.style.display = 'none';
+    } catch (err) {
+      console.error('Error initializing auth:', err);
     }
-
-  } catch (err) {
-    console.error('Error initializing auth:', err);
-    if (logoutLink) logoutLink.style.display = 'none';
   }
-}
 
   // Initialize authentication
   initAuth();
@@ -113,74 +123,82 @@ function initAuth() {
   });
 
   // ===================================================================
-  // 3. BOOKING FORM
-  // ===================================================================
-  
-  const bookingForm = document.getElementById('booking-form');
-  const submitBooking = document.getElementById('submit-booking');
-  const bookingName = document.getElementById('booking-name');
-  const bookingBirthday = document.getElementById('booking-birthday');
-  const bookingHours = document.getElementById('booking-hours');
-  const bookingMsg = document.getElementById('booking-msg');
+// 3. BOOKING FORM (FIXED)
+// ===================================================================
 
-  // Prefill pending booking from sessionStorage
-  try {
-    const pendingBooking = sessionStorage.getItem('pendingBooking');
-    if (pendingBooking) {
-      const data = JSON.parse(pendingBooking);
-      if (bookingName && data.name) bookingName.value = data.name;
-      if (bookingBirthday && data.birthday) bookingBirthday.value = data.birthday;
-      if (bookingHours && data.hours) bookingHours.value = data.hours;
+const bookingForm = document.getElementById('booking-form');
+const submitBooking = document.getElementById('submit-booking');
+const bookingName = document.getElementById('booking-name');
+const bookingDate = document.getElementById('booking-date');
+const bookingHours = document.getElementById('booking-hours');
+const bookingMsg = document.getElementById('booking-msg');
+
+// Set minimum date to today
+if (bookingDate) {
+  const today = new Date().toISOString().split('T')[0];
+  bookingDate.setAttribute('min', today);
+}
+
+// Prefill pending booking from sessionStorage
+try {
+  const pendingBooking = sessionStorage.getItem('pendingBooking');
+  if (pendingBooking) {
+    const data = JSON.parse(pendingBooking);
+    if (bookingName && data.name) bookingName.value = data.name;
+    if (bookingDate && data.date) bookingDate.value = data.date;
+    if (bookingHours && data.hours) bookingHours.value = data.hours;
+  }
+} catch (err) {
+  console.warn('Error reading pending booking:', err);
+}
+
+// Handle booking submission
+if (submitBooking) {
+  submitBooking.addEventListener('click', async (e) => {
+    e.preventDefault();
+
+    // Validation
+    if (!bookingName?.value || !bookingDate?.value || !bookingHours?.value) {
+      if (bookingMsg) {
+        bookingMsg.textContent = 'Please fill in all fields';
+        bookingMsg.style.color = 'red';
+      }
+      return;
     }
-  } catch (err) {
-    console.warn('Error reading pending booking:', err);
-  }
 
-  // Handle booking submission
-  if (submitBooking) {
-    submitBooking.addEventListener('click', async (e) => {
-      e.preventDefault();
+    const bookingData = {
+      name: bookingName.value.trim(),
+      date: bookingDate.value,
+      hours: bookingHours.value
+    };
 
-      // Validation
-      if (!bookingName?.value || !bookingBirthday?.value || !bookingHours?.value) {
-        if (bookingMsg) {
-          bookingMsg.textContent = 'Please fill in all fields';
-          bookingMsg.style.color = 'red';
-        }
-        return;
+    // Validate date (must be today or in the future)
+    const selectedDate = new Date(bookingData.date);
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+    
+    if (selectedDate < todayDate) {
+      if (bookingMsg) {
+        bookingMsg.textContent = 'Please select today or a future date';
+        bookingMsg.style.color = 'red';
       }
+      return;
+    }
 
-      const bookingData = {
-        name: bookingName.value.trim(),
-        birthday: bookingBirthday.value,
-        hours: bookingHours.value
-      };
-
-      // Validate birthday (must be in the past)
-      const birthdayDate = new Date(bookingData.birthday);
-      const today = new Date();
-      if (birthdayDate >= today) {
-        if (bookingMsg) {
-          bookingMsg.textContent = 'Birthday must be in the past';
-          bookingMsg.style.color = 'red';
-        }
-        return;
+    // Save to sessionStorage and redirect to main booking page
+    try {
+      sessionStorage.setItem('pendingBooking', JSON.stringify(bookingData));
+      // FIXED: Use the correct path that matches your server structure
+      window.location.href = '/frontend/views/user/booking.html';
+    } catch (error) {
+      console.error('Error saving booking data:', error);
+      if (bookingMsg) {
+        bookingMsg.textContent = 'Error saving booking data. Please try again.';
+        bookingMsg.style.color = 'red';
       }
-
-      // Save to sessionStorage and redirect to main booking page
-      try {
-        sessionStorage.setItem('pendingBooking', JSON.stringify(bookingData));
-        // Redirect to main booking page
-        window.location.href = '/frontend/views/user/booking.html';
-      } catch (error) {
-        console.error('Error saving booking data:', error);
-        if (bookingMsg) {
-          bookingMsg.textContent = 'Error saving booking data. Please try again.';
-          bookingMsg.style.color = 'red';
-        }
-      }
-    });
-  }
+    }
+  });
+}
 
   // ===================================================================
   // 4. CONTACT FORM

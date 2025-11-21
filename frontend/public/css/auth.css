@@ -51,13 +51,7 @@ body {
   transition: 0.3s ease;
 }
 
-.register-card:hover, 
-.login-card:hover, 
-.pass-reset-card:hover, 
-.code-verification-card:hover,
-.otp-input-group:hover {
-  box-shadow: 0 0 35px rgba(255, 215, 0, 0.25);
-}
+
 
 .register-card::before, 
 .login-card::before, 

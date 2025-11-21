@@ -1,37 +1,28 @@
 import express from 'express';
+import { optionalAuth, requireAuth } from '../middleware/auth.js';
+
+// Import only what exists in your bookingController
 import {
-  createInitialBooking,
-  getUserData,
   createBooking,
-  getBooking,
-  updatePaymentStatus,
   getAvailableSlots
 } from '../controllers/bookingController.js';
-import { authenticateToken } from '../utils/jwt.js';
 
 const router = express.Router();
 
 /**
- * Booking Routes
+ * User Booking Routes
+ * These routes are for regular users to manage their bookings
  */
 
-// Create initial booking from landing page (no auth required)
-router.post('/create-initial', createInitialBooking);
-
-// Get user data for auto-fill (requires auth)
-router.get('/user-data', authenticateToken, getUserData);
-
-// Get available time slots
+// Get available time slots (no auth required)
 router.get('/available-slots', getAvailableSlots);
 
-// Create full booking (auth optional for guest bookings)
-router.post('/create', createBooking);
+// Create new booking (optional auth - supports guest bookings)
+router.post('/create', optionalAuth, createBooking);
 
-// Get booking by ID
-router.get('/:bookingId', getBooking);
-
-// Update payment status
-router.post('/update-payment', updatePaymentStatus);
+// TODO: Add these routes later when you implement the functions
+// router.get('/my-bookings', requireAuth, getUserBookings);
+// router.get('/:bookingId', requireAuth, getBooking);
+// router.post('/update-payment', requireAuth, updatePaymentStatus);
 
 export default router;
-

@@ -3,16 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <!-- ✅ FIXED: Proper CSP - no invalid sources -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' 'unsafe-eval';
+    style-src 'self' 'unsafe-inline';
+    font-src 'self' data:;
+    img-src 'self' data: https://cdn-icons-png.flaticon.com;
+    connect-src 'self' http://localhost:* ws: wss:;
+    base-uri 'self';
+    form-action 'self'
+  ">
+  
   <title>MixLab Studio | Login</title>
-  <link rel="stylesheet" href="/frontend/public/css/auth.css" />
+
+  <!-- ✅ CORRECT: Path relative to Express serving port 3000 -->
+  <link rel="stylesheet" href="/css/auth.css" />
 </head>
+
 <body>
   <div class="wrapper">
     <div class="login-card">
       <h1>Login</h1>
       <p class="subtitle">Sign in to your MixLab Studio account</p>
 
-      <form id="loginForm" class="form" action="/frontend/public/landing.html">
+      <form id="loginForm" class="form">
         <div class="input-group">
           <label for="username">Username</label>
           <input type="text" id="username" placeholder="Enter your username" required />
@@ -20,33 +36,62 @@
 
         <div class="input-group">
           <label for="password">Password</label>
-          <input type="password" id="password" placeholder="Enter your password" required />
+          <div style="position: relative;">
+            <button 
+              type="button" 
+              id="togglePassword" 
+              style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; padding: 5px; z-index: 10;"
+              aria-label="Toggle password visibility"
+            >
+              <svg id="eyeIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </button>
+
+            <input 
+              type="password" 
+              id="password" 
+              placeholder="Enter your password" 
+              required 
+            />
+          </div>
         </div>
-        
 
         <button type="submit" class="btn-primary">Login</button>
 
-        <a href="forgot_password.html" class="pass-reset">Forgot password?</a>
+        <a href="/auth/forgot_password.html" class="pass-reset">Forgot password?</a>
 
         <div class="divider"><span>or sign in with</span></div>
 
         <div class="social-buttons">
-          <button type="button" class="social-btn google">
+          <button 
+            type="button" 
+            class="social-btn google"
+            onclick="window.location.href = '/api/auth/google';"
+          >
             <img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" alt="Google icon" />
             Google
           </button>
-          <button type="button" class="social-btn facebook">
+
+          <button 
+            type="button" 
+            class="social-btn facebook"
+            onclick="window.location.href = '/api/auth/facebook';"
+          >
             <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook icon" />
             Facebook
           </button>
         </div>
 
         <p class="login-text">
-          Don't have an account? <a href="register.html">Register here</a>
+          Don't have an account? <a href="/auth/register.html">Register here</a>
         </p>
       </form>
     </div>
   </div>
-  <script src="login.js"></script>
+
+  <!-- ✅ CORRECT: Path relative to Express serving port 3000 -->
+  <script src="/js/auth/login.js"></script>
 </body>
 </html>

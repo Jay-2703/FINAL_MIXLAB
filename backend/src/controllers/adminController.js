@@ -6,6 +6,10 @@ import { getIO } from '../config/socket.js';
  * Admin Dashboard - Get metrics and statistics
  * GET /api/admin/dashboard
  */
+/**
+ * Admin Dashboard - Get metrics and statistics
+ * GET /api/admin/dashboard
+ */
 export const getDashboardMetrics = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -16,10 +20,13 @@ export const getDashboardMetrics = async (req, res) => {
       'SELECT COUNT(*) as count FROM users WHERE role = "student" AND created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)'
     );
 
-    // Total appointments
-    const totalAppointments = await query('SELECT COUNT(*) as count FROM appointments WHERE status != "cancelled"');
-    const lastWeekAppointments = await query(
-      'SELECT COUNT(*) as count FROM appointments WHERE status != "cancelled" AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)'
+    // Total bookings
+    const totalBookings = await query(
+      'SELECT COUNT(*) as count FROM bookings WHERE check_in_status != "cancelled"'
+    );
+
+    const lastWeekBookings = await query(
+      'SELECT COUNT(*) as count FROM bookings WHERE check_in_status != "cancelled" AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)'
     );
 
     // Completed lessons
@@ -34,6 +41,7 @@ export const getDashboardMetrics = async (req, res) => {
        WHERE payment_status IN ('paid', 'cash') 
        AND created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`
     );
+
     const lastMonthRevenue = await query(
       `SELECT COALESCE(SUM(amount), 0) as total FROM bookings 
        WHERE payment_status IN ('paid', 'cash') 
@@ -46,42 +54,60 @@ export const getDashboardMetrics = async (req, res) => {
       `SELECT COUNT(DISTINCT user_id) as count FROM user_module_progress 
        WHERE completed_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)`
     );
+
     const totalActiveUsers = await query(
       `SELECT COUNT(*) as count FROM users WHERE role = "student" AND is_verified = 1`
     );
 
-    const engagementRate = (totalActiveUsers && totalActiveUsers[0]?.count > 0)
-      ? ((activeUsers && activeUsers[0]?.count || 0) / totalActiveUsers[0].count * 100).toFixed(1)
-      : 0;
+    const engagementRate =
+      totalActiveUsers && totalActiveUsers[0]?.count > 0
+        ? (
+            ((activeUsers && activeUsers[0]?.count) || 0) /
+            totalActiveUsers[0].count *
+            100
+          ).toFixed(1)
+        : 0;
 
-    // Calculate percentage changes
-    const userGrowth = lastMonthUsers && lastMonthUsers[0]?.count > 0
-      ? (((totalUsers && totalUsers[0]?.count || 0) - lastMonthUsers[0].count) / lastMonthUsers[0].count * 100).toFixed(1)
-      : 0;
+    // Percentage change calculations
+    const userGrowth =
+      lastMonthUsers && lastMonthUsers[0]?.count > 0
+        ? (
+            ((totalUsers && totalUsers[0]?.count) || 0 - lastMonthUsers[0].count) /
+            lastMonthUsers[0].count *
+            100
+          ).toFixed(1)
+        : 0;
 
-    const appointmentGrowth = lastWeekAppointments && lastWeekAppointments[0]?.count > 0
-      ? (((totalAppointments && totalAppointments[0]?.count || 0) - lastWeekAppointments[0].count) / lastWeekAppointments[0].count * 100).toFixed(1)
-      : 0;
+    const bookingGrowth =
+      lastWeekBookings && lastWeekBookings[0]?.count > 0
+        ? (
+            ((totalBookings && totalBookings[0]?.count) || 0 - lastWeekBookings[0].count) /
+            lastWeekBookings[0].count *
+            100
+          ).toFixed(1)
+        : 0;
 
-    const revenueGrowth = lastMonthRevenue && lastMonthRevenue[0]?.total > 0
-      ? (((monthlyRevenue && monthlyRevenue[0]?.total || 0) - lastMonthRevenue[0].total) / lastMonthRevenue[0].total * 100).toFixed(1)
-      : 0;
+    const revenueGrowth =
+      lastMonthRevenue && lastMonthRevenue[0]?.total > 0
+        ? (
+            ((monthlyRevenue && monthlyRevenue[0]?.total) || 0 - lastMonthRevenue[0].total) /
+            lastMonthRevenue[0].total *
+            100
+          ).toFixed(1)
+        : 0;
 
-    // Get upcoming appointments (next 5)
-    const upcomingAppointments = await query(
-      `SELECT a.*, 
-       u1.first_name as student_first_name, u1.last_name as student_last_name, u1.email as student_email,
-       u2.first_name as instructor_first_name, u2.last_name as instructor_last_name
-       FROM appointments a
-       LEFT JOIN users u1 ON a.student_id = u1.id
-       LEFT JOIN users u2 ON a.instructor_id = u2.id
-       WHERE a.status IN ('pending', 'confirmed')
-       AND (a.date > CURDATE() OR (a.date = CURDATE() AND a.time >= CURTIME()))
-       ORDER BY a.date ASC, a.time ASC
+    // Upcoming bookings (next 5)
+    const upcomingBookings = await query(
+      `SELECT b.*
+       FROM bookings b
+       WHERE b.check_in_status IN ('pending', 'checked_in')
+       AND (b.booking_date > CURDATE() 
+        OR (b.booking_date = CURDATE() AND b.booking_time >= CURTIME()))
+       ORDER BY b.booking_date ASC, b.booking_time ASC
        LIMIT 5`
     );
 
-    // Get recent users (last 6)
+    // Recent users (unchanged)
     const recentUsers = await query(
       `SELECT u.*, 
        COALESCE(up.total_points, 0) as total_points,
@@ -123,15 +149,15 @@ export const getDashboardMetrics = async (req, res) => {
         metrics: {
           totalUsers: (totalUsers && totalUsers[0]?.count) || 0,
           userGrowth: `+${userGrowth}%`,
-          totalAppointments: (totalAppointments && totalAppointments[0]?.count) || 0,
-          appointmentGrowth: `+${appointmentGrowth}%`,
+          totalBookings: (totalBookings && totalBookings[0]?.count) || 0,
+          bookingGrowth: `+${bookingGrowth}%`,
           completedLessons: (completedLessons && completedLessons[0]?.count) || 0,
           newLessonsThisMonth: (thisMonthLessons && thisMonthLessons[0]?.count) || 0,
           monthlyRevenue: parseFloat((monthlyRevenue && monthlyRevenue[0]?.total) || 0).toFixed(2),
           revenueGrowth: `+${revenueGrowth}%`,
           engagementRate: `${engagementRate}%`
         },
-        upcomingAppointments,
+        upcomingBookings,
         recentUsers,
         revenueTrends,
         userEngagement

@@ -13,9 +13,9 @@ const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '30d';
  * @param {object} payload - User data to encode
  * @returns {string} JWT token
  */
-export const generateToken = (payload) => {
+export const generateToken = (payload, expiresIn = JWT_EXPIRES_IN) => {
   return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: JWT_EXPIRES_IN
+    expiresIn
   });
 };
 

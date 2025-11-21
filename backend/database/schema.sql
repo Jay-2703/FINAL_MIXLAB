@@ -10,11 +10,11 @@ CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100),                  -- optional
     email VARCHAR(255) NOT NULL UNIQUE,
-    birthday DATE,
+    birthday DATE,                           -- optional
     contact VARCHAR(20),
-    home_address TEXT,
+    home_address TEXT,                       -- optional
     hashed_password VARCHAR(255),
     role ENUM('student', 'admin', 'instructor') DEFAULT 'student',
     is_verified BOOLEAN DEFAULT FALSE,
@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS users (
     INDEX idx_is_verified (is_verified),
     INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 -- OTP Verification table for email verification and password reset
 CREATE TABLE IF NOT EXISTS otp_verification (
@@ -316,29 +317,6 @@ INSERT INTO quiz_achievements (name, description, icon, achievement_type, thresh
 ('Concert Performer', 'Complete 10 quizzes', '🎻', 'participation', 10, 75)
 ON DUPLICATE KEY UPDATE name=name;
 
--- Admin Panel Tables
--- Appointments table for lesson scheduling
-CREATE TABLE IF NOT EXISTS appointments (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    student_id INT NOT NULL,
-    instructor_id INT NULL, -- NULL if not assigned yet
-    booking_id VARCHAR(50) NULL, -- Link to booking if exists
-    date DATE NOT NULL,
-    time TIME NOT NULL,
-    service_type VARCHAR(50) DEFAULT 'lesson',
-    status ENUM('pending', 'confirmed', 'cancelled', 'completed', 'rescheduled') DEFAULT 'pending',
-    notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (instructor_id) REFERENCES users(id) ON DELETE SET NULL,
-    INDEX idx_student_id (student_id),
-    INDEX idx_instructor_id (instructor_id),
-    INDEX idx_date (date),
-    INDEX idx_status (status),
-    INDEX idx_booking_id (booking_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Announcements table
 CREATE TABLE IF NOT EXISTS announcements (
@@ -379,7 +357,7 @@ CREATE TABLE IF NOT EXISTS activity_logs (
 CREATE TABLE IF NOT EXISTS notifications (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NULL, -- NULL for broadcast notifications
-    type ENUM('system', 'user', 'appointment', 'gamification', 'announcement') NOT NULL,
+    type ENUM('system', 'user', 'bookings', 'gamification', 'announcement') NOT NULL,
     message TEXT NOT NULL,
     link VARCHAR(500), -- Optional link to related page
     is_read BOOLEAN DEFAULT FALSE,
@@ -392,10 +370,9 @@ CREATE TABLE IF NOT EXISTS notifications (
     INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Note: Run these ALTER TABLE statements separately if columns don't exist
--- ALTER TABLE modules ADD COLUMN status ENUM('active', 'inactive', 'draft') DEFAULT 'active';
--- ALTER TABLE modules ADD COLUMN service_type VARCHAR(50) DEFAULT 'lesson';
--- ALTER TABLE modules ADD COLUMN level_requirement INT DEFAULT 1;
--- ALTER TABLE lessons ADD COLUMN status ENUM('active', 'inactive', 'draft') DEFAULT 'active';
--- ALTER TABLE quizzes ADD COLUMN status ENUM('active', 'inactive', 'draft') DEFAULT 'active';
+ALTER TABLE modules ADD COLUMN status ENUM('active', 'inactive', 'draft') DEFAULT 'active';
+ALTER TABLE modules ADD COLUMN service_type VARCHAR(50) DEFAULT 'lesson';
+ALTER TABLE modules ADD COLUMN level_requirement INT DEFAULT 1;
+ALTER TABLE lessons ADD COLUMN status ENUM('active', 'inactive', 'draft') DEFAULT 'active';
+ALTER TABLE quizzes ADD COLUMN status ENUM('active', 'inactive', 'draft') DEFAULT 'active';
 

@@ -38,7 +38,7 @@ function calculateAmount(serviceType, hours) {
 }
 
 /**
- * Check for time conflicts
+ * Check for time conflicts — UPDATED VERSION
  */
 async function checkTimeConflict(bookingDate, bookingTime, hours, excludeBookingId = null) {
   try {
@@ -53,9 +53,9 @@ async function checkTimeConflict(bookingDate, bookingTime, hours, excludeBooking
 
     let conflictQuery = `
       SELECT * FROM bookings 
-      WHERE booking_date = ? 
+      WHERE booking_date = ?
       AND payment_status IN ('pending', 'paid', 'cash')
-      AND check_in_status != 'cancelled'
+      AND check_in_status NOT IN ('cancelled')
       AND (
         (booking_time <= ? AND ADDTIME(booking_time, CONCAT(hours, ':00:00')) > ?)
         OR (booking_time < ? AND ADDTIME(booking_time, CONCAT(hours, ':00:00')) >= ?)
@@ -63,7 +63,12 @@ async function checkTimeConflict(bookingDate, bookingTime, hours, excludeBooking
       )
     `;
 
-    const params = [bookingDate, startTimeStr, startTimeStr, endTimeStr, startTimeStr, startTimeStr, endTimeStr];
+    const params = [
+      bookingDate,
+      startTimeStr, startTimeStr,
+      endTimeStr, startTimeStr,
+      startTimeStr, endTimeStr
+    ];
 
     if (excludeBookingId) {
       conflictQuery += ' AND booking_id != ?';
@@ -71,23 +76,27 @@ async function checkTimeConflict(bookingDate, bookingTime, hours, excludeBooking
     }
 
     const conflicts = await query(conflictQuery, params);
-
     return conflicts.length > 0;
   } catch (error) {
     console.error('Error checking time conflict:', error);
-    return false; // On error, allow booking (can be made stricter)
+    return false;
   }
 }
 
 /**
+ * Helper: Notify admins
+ */
+async function notifyAdmins(type, message, link) {
+  console.log(`[ADMIN NOTIFICATION] ${type}: ${message} - ${link}`);
+}
+
+/**
  * Create booking from landing page input
- * POST /api/bookings/create-initial
  */
 export const createInitialBooking = async (req, res) => {
   try {
     const { name, birthday, hours } = req.body;
 
-    // Validation
     if (!name || !birthday || !hours) {
       return res.status(400).json({
         success: false,
@@ -95,7 +104,6 @@ export const createInitialBooking = async (req, res) => {
       });
     }
 
-    // Validate hours
     const hoursNum = parseInt(hours);
     if (isNaN(hoursNum) || hoursNum < 1 || hoursNum > 8) {
       return res.status(400).json({
@@ -104,16 +112,10 @@ export const createInitialBooking = async (req, res) => {
       });
     }
 
-    // Store in session storage (will be used on booking page)
-    // For now, return success and let frontend handle storage
     res.json({
       success: true,
       message: 'Booking data saved',
-      data: {
-        name,
-        birthday,
-        hours: hoursNum
-      }
+      data: { name, birthday, hours: hoursNum }
     });
   } catch (error) {
     console.error('Error creating initial booking:', error);
@@ -126,14 +128,12 @@ export const createInitialBooking = async (req, res) => {
 
 /**
  * Get user data for auto-fill
- * GET /api/bookings/user-data
  */
 export const getUserData = async (req, res) => {
   try {
-    // Get user from token
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
-    
+
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -149,7 +149,6 @@ export const getUserData = async (req, res) => {
       });
     }
 
-    // Get user data
     const [user] = await query(
       'SELECT id, first_name, last_name, email, birthday, contact, home_address FROM users WHERE id = ?',
       [decoded.id]
@@ -184,15 +183,10 @@ export const getUserData = async (req, res) => {
 };
 
 /**
- * Create full booking
- * POST /api/bookings/create
+ * Create new booking
  */
 export const createBooking = async (req, res) => {
-  const connection = await getConnection();
-  
   try {
-    await connection.beginTransaction();
-
     const {
       name,
       birthday,
@@ -207,171 +201,179 @@ export const createBooking = async (req, res) => {
       paymentMethod
     } = req.body;
 
-    // Validation
-    if (!name || !bookingDate || !bookingTime || !hours || !paymentMethod) {
-      await connection.rollback();
+    if (!name || !email || !contact || !serviceType || !bookingDate || !bookingTime) {
       return res.status(400).json({
         success: false,
         message: 'Missing required fields'
       });
     }
 
-    // Check for time conflicts
-    const hasConflict = await checkTimeConflict(bookingDate, bookingTime, hours);
+    const bookingHours = parseInt(hours) || 1;
+
+    if (bookingHours < 1 || bookingHours > 12) {
+      return res.status(400).json({
+        success: false,
+        message: 'Hours must be between 1 and 12'
+      });
+    }
+
+    // CONFIRM NO TIME CONFLICT
+    const hasConflict = await checkTimeConflict(bookingDate, bookingTime, bookingHours);
     if (hasConflict) {
-      await connection.rollback();
       return res.status(409).json({
         success: false,
-        message: 'Time slot is already booked. Please choose another time.'
+        message: 'This time slot is already booked. Please choose another time.'
       });
     }
 
-    // Get user ID if authenticated
-    let userId = null;
-    const authHeader = req.headers['authorization'];
-    if (authHeader) {
-      const token = authHeader.split(' ')[1];
-      const decoded = verifyToken(token);
-      if (decoded && decoded.id) {
-        userId = decoded.id;
-      }
-    }
+    const userId = req.user?.id || null;
 
-    // Calculate amount
-    const amount = calculateAmount(serviceType || 'rehearsal', hours);
+    const totalPrice = calculateAmount(serviceType, bookingHours);
 
-    // Generate booking ID
     const bookingId = generateBookingId();
 
-    // Determine payment status
-    let paymentStatus = 'pending';
-    let referenceNumber = null;
+    // Insert booking
+    const result = await query(
+      `INSERT INTO bookings 
+       (booking_id, user_id, name, birthday, email, contact, home_address, 
+        service_type, booking_date, booking_time, hours, members, 
+        payment_method, total_price, payment_status, check_in_status, created_at) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'pending', NOW())`,
+      [
+        bookingId,
+        userId,
+        name,
+        birthday,
+        email,
+        contact,
+        homeAddress,
+        serviceType,
+        bookingDate,
+        bookingTime,
+        bookingHours,
+        members || 1,
+        paymentMethod,
+        totalPrice
+      ]
+    );
+
+    let paymentUrl = null;
     let xenditInvoiceId = null;
 
-    if (paymentMethod === 'cash') {
-      paymentStatus = 'cash';
-      referenceNumber = `CASH-${bookingId}`;
-    } else {
-      // For digital payments, create Xendit invoice
-      const invoiceResult = await createInvoice({
-        externalId: bookingId,
-        amount: amount,
-        payerEmail: email || 'guest@mixlab.com',
-        description: `MixLab Studio Booking - ${serviceType || 'rehearsal'}`,
-        paymentMethods: paymentMethod === 'gcash' ? ['GCASH'] : ['CREDIT_CARD', 'DEBIT_CARD'],
-        metadata: {
-          bookingId: bookingId,
-          serviceType: serviceType,
-          hours: hours
-        }
-      });
+    if (paymentMethod === 'gcash' || paymentMethod === 'credit_card') {
+      try {
+        const invoiceResult = await createInvoice({
+          externalId: bookingId,
+          amount: totalPrice,
+          payerEmail: email,
+          description: `MixLab Studio - ${formatServiceType(serviceType)} Booking`,
+          metadata: {
+            booking_id: bookingId,
+            service_type: serviceType,
+            booking_date: bookingDate,
+            booking_time: bookingTime,
+            customer_name: name
+          }
+        });
 
-      if (invoiceResult.success) {
-        xenditInvoiceId = invoiceResult.data.id;
-        referenceNumber = invoiceResult.data.external_id;
-      } else {
-        await connection.rollback();
+        if (invoiceResult.success) {
+          paymentUrl = invoiceResult.data.invoice_url;
+          xenditInvoiceId = invoiceResult.data.id;
+
+          await query(
+            'UPDATE bookings SET xendit_invoice_id = ? WHERE booking_id = ?',
+            [xenditInvoiceId, bookingId]
+          );
+        } else {
+          return res.status(500).json({
+            success: false,
+            message: 'Failed to create payment invoice'
+          });
+        }
+      } catch (error) {
+        console.error(error);
         return res.status(500).json({
           success: false,
-          message: 'Failed to create payment invoice',
-          error: invoiceResult.error
+          message: 'Failed to initialize payment'
         });
       }
     }
 
-    // Create booking
-    const [result] = await query(
-      `INSERT INTO bookings (
-        booking_id, user_id, name, birthday, email, contact, home_address,
-        service_type, booking_date, booking_time, hours, members,
-        payment_method, amount, payment_status, reference_number, xendit_invoice_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        bookingId, userId, name, birthday || null, email || null, contact || null, homeAddress || null,
-        serviceType || 'rehearsal', bookingDate, bookingTime, hours, members || 1,
-        paymentMethod, amount, paymentStatus, referenceNumber, xenditInvoiceId
-      ],
-      connection
+    await notifyAdmins(
+      'booking',
+      `New booking from ${name} for ${serviceType} on ${bookingDate}`,
+      `/frontend/views/admin/bookings.html`
     );
 
-    const bookingDbId = result.insertId;
-
-    // Generate QR code
-    const bookingData = {
-      booking_id: bookingId,
-      name,
-      booking_date: bookingDate,
-      booking_time: bookingTime,
-      hours
-    };
-
-    const qrResult = await qrService.generateBookingQR(bookingData, bookingId);
-
-    if (!qrResult.success) {
-      console.error('Failed to generate QR code:', qrResult.error);
-      // Continue without QR code, can be generated later
-    }
-
-    // Update booking with QR code
-    if (qrResult.success) {
-      await query(
-        'UPDATE bookings SET qr_code_path = ?, qr_code_data = ? WHERE id = ?',
-        [qrResult.qrPath, qrResult.qrDataUrl, bookingDbId],
-        connection
-      );
-    }
-
-    // Get full booking data
-    const [booking] = await query(
-      'SELECT * FROM bookings WHERE id = ?',
-      [bookingDbId],
-      connection
-    );
-
-    await connection.commit();
-
-    // Send email with QR code if email provided
-    if (email && qrResult.success) {
-      bookingEmailService.sendBookingConfirmation(booking, qrResult.qrDataUrl)
-        .catch(err => console.error('Failed to send booking email:', err));
-    }
-
-    res.json({
+    res.status(201).json({
       success: true,
       message: 'Booking created successfully',
       data: {
-        booking: booking,
-        qrCode: qrResult.qrDataUrl,
-        paymentUrl: paymentMethod !== 'cash' && invoiceResult.success ? invoiceResult.data.invoice_url : null
+        booking: {
+          booking_id: bookingId,
+          id: result.insertId,
+          status: 'pending',
+          payment_status: 'pending',
+          total_price: totalPrice,
+          service_type: serviceType,
+          booking_date: bookingDate,
+          booking_time: bookingTime
+        },
+        paymentUrl
       }
     });
+
   } catch (error) {
-    await connection.rollback();
-    console.error('Error creating booking:', error);
+    console.error('Create booking error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: 'Failed to create booking'
     });
-  } finally {
-    connection.release();
   }
 };
 
 /**
- * Get booking by ID
- * GET /api/bookings/:bookingId
+ * Get user's bookings
+ */
+export const getUserBookings = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const bookings = await query(
+      `SELECT * FROM bookings 
+       WHERE user_id = ? 
+       ORDER BY booking_date DESC, booking_time DESC`,
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      data: { bookings }
+    });
+  } catch (error) {
+    console.error('Get user bookings error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch bookings'
+    });
+  }
+};
+
+/**
+ * Get specific booking
  */
 export const getBooking = async (req, res) => {
   try {
     const { bookingId } = req.params;
+    const userId = req.user.id;
 
-    const [booking] = await query(
-      'SELECT * FROM bookings WHERE booking_id = ?',
-      [bookingId]
+    const bookings = await query(
+      `SELECT * FROM bookings 
+       WHERE id = ? AND user_id = ?`,
+      [bookingId, userId]
     );
 
-    if (!booking) {
+    if (!bookings || bookings.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Booking not found'
@@ -380,35 +382,34 @@ export const getBooking = async (req, res) => {
 
     res.json({
       success: true,
-      data: booking
+      data: { booking: bookings[0] }
     });
   } catch (error) {
-    console.error('Error getting booking:', error);
+    console.error('Get booking error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Failed to fetch booking'
     });
   }
 };
 
 /**
- * Update booking payment status
- * POST /api/bookings/update-payment
+ * Update payment status
  */
 export const updatePaymentStatus = async (req, res) => {
   try {
-    const { bookingId, paymentStatus, xenditPaymentId } = req.body;
+    const { bookingId, paymentStatus } = req.body;
 
     if (!bookingId || !paymentStatus) {
       return res.status(400).json({
         success: false,
-        message: 'Booking ID and payment status are required'
+        message: 'Missing required fields'
       });
     }
 
     await query(
-      'UPDATE bookings SET payment_status = ?, xendit_payment_id = ?, updated_at = NOW() WHERE booking_id = ?',
-      [paymentStatus, xenditPaymentId || null, bookingId]
+      'UPDATE bookings SET payment_status = ? WHERE booking_id = ?',
+      [paymentStatus, bookingId]
     );
 
     res.json({
@@ -416,17 +417,28 @@ export const updatePaymentStatus = async (req, res) => {
       message: 'Payment status updated'
     });
   } catch (error) {
-    console.error('Error updating payment status:', error);
+    console.error('Update payment status error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Failed to update payment status'
     });
   }
 };
 
 /**
- * Get available time slots for a date
- * GET /api/bookings/available-slots
+ * Format service type
+ */
+function formatServiceType(type) {
+  const types = {
+    'recording': 'Recording Studio',
+    'voiceover': 'Voiceover/Podcast',
+    'arrangement': 'Music Arrangement'
+  };
+  return types[type] || type;
+}
+
+/**
+ * Get available time slots — UPDATED VERSION
  */
 export const getAvailableSlots = async (req, res) => {
   try {
@@ -439,27 +451,25 @@ export const getAvailableSlots = async (req, res) => {
       });
     }
 
-    // Studio hours: 9 AM to 9 PM
     const startHour = 9;
     const endHour = 21;
     const hoursNeeded = parseInt(hours) || 1;
 
-    // Get all bookings for this date
     const bookings = await query(
       `SELECT booking_time, hours FROM bookings 
-       WHERE booking_date = ? 
+       WHERE booking_date = ?
        AND payment_status IN ('pending', 'paid', 'cash')
-       AND check_in_status != 'cancelled'`,
+       AND check_in_status NOT IN ('cancelled')`,
       [date]
     );
 
-    // Calculate occupied time slots
     const occupiedSlots = new Set();
+
     bookings.forEach(booking => {
       const [timeHours, timeMinutes] = booking.booking_time.split(':').map(Number);
       const startMinutes = timeHours * 60 + timeMinutes;
       const endMinutes = startMinutes + (booking.hours * 60);
-      
+
       for (let min = startMinutes; min < endMinutes; min += 30) {
         const hour = Math.floor(min / 60);
         const minute = min % 60;
@@ -467,19 +477,18 @@ export const getAvailableSlots = async (req, res) => {
       }
     });
 
-    // Generate available slots
     const availableSlots = [];
+
     for (let hour = startHour; hour <= endHour - hoursNeeded; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
         const slotTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+
         let isAvailable = true;
 
-        // Check if this slot and the next hours are available
         for (let h = 0; h < hoursNeeded; h++) {
           const checkHour = hour + h;
-          const checkMinute = minute;
-          const checkTime = `${checkHour.toString().padStart(2, '0')}:${checkMinute.toString().padStart(2, '0')}`;
-          
+          const checkTime = `${checkHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+
           if (occupiedSlots.has(checkTime) || checkHour >= endHour) {
             isAvailable = false;
             break;
@@ -494,12 +503,9 @@ export const getAvailableSlots = async (req, res) => {
 
     res.json({
       success: true,
-      data: {
-        date,
-        availableSlots,
-        hours: hoursNeeded
-      }
+      data: { date, availableSlots, hours: hoursNeeded }
     });
+
   } catch (error) {
     console.error('Error getting available slots:', error);
     res.status(500).json({
@@ -508,4 +514,3 @@ export const getAvailableSlots = async (req, res) => {
     });
   }
 };
-

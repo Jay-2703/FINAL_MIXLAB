@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Booking Success</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+  :root {
+    --accent: #ffd700;
+    --bg-main: #1b1b1b;
+    --bg-card: #232323;
+    --white: #fff;
+    --shadow: 0 0 20px rgba(255,215,0,.12);
+  }
+
+  body {
+    background: var(--bg-main);
+    margin: 0;
+    padding: 30px 0;
+    display: flex;
+    justify-content: center;
+  }
+
+  .card-layout {
+    max-width: 560px;
+    background: var(--bg-card);
+    border-radius: 14px;
+    padding: 2em;
+    border: 2.8px solid #33332d;
+    box-shadow: var(--shadow);
+    display: flex;
+    gap: 1.8em;
+  }
+
+  .card-details-col { flex: 2; }
+  .qr-col { flex: 1; text-align: center; }
+
+  .confirm-num-row {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: var(--accent);
+    margin-bottom: .6em;
+    border-bottom: 1px dashed #555;
+    padding-bottom: 6px;
+  }
+
+  .total-row {
+    background: #222114;
+    border: 2px solid var(--accent);
+    padding: .7em;
+    text-align: center;
+    border-radius: 6px;
+    margin-top: 1em;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--accent);
+  }
+
+  .qr-box {
+    background: #fff;
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .receipt-btn {
+    width: 100%;
+    padding: 12px 0;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 1em;
+  }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+</head>
+<body>
+
+<!-- STEP 3 TEMPLATE -->
+<template id="booking-success">
+  <div class="card-layout" id="success-card">
+
+    <div class="card-details-col">
+      <div class="confirm-num-row">
+        Confirmation #: <span id="booking-ref"></span>
+      </div>
+
+      <div id="success-details"></div>
+
+      <div class="total-row">
+        Total: <span id="total-amount"></span>
+      </div>
+
+      <button class="receipt-btn" id="btn-receipt">
+        Download Receipt
+      </button>
+    </div>
+
+    <div class="qr-col">
+      <div class="qr-box" id="success-qr"></div>
+      <div style="color: var(--accent); margin-top: 10px; font-weight: bold;">
+        Scan to view booking
+      </div>
+    </div>
+
+  </div>
+</template>
+
+<script src="/public/js/booking/booking.js"></script>
+</body>
+</html>

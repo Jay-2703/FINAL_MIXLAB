@@ -1,6 +1,6 @@
 import { query, getConnection } from '../config/db.js';
-import { hashPassword, comparePassword, validatePasswordStrength } from '../utils/passwordUtils.js';
-import { generateToken } from '../utils/jwt.js';
+import { hashPassword, comparePassword } from '../utils/passwordUtils.js';
+import { generateToken, verifyToken } from '../utils/jwt.js';
 import otpService from '../services/otpService.js';
 import { trackFailedLoginAttempt, checkAccountLock, resetFailedLoginAttempts } from '../middleware/security.js';
 import { notifyAdmins } from '../services/notificationService.js';
@@ -8,6 +8,9 @@ import { notifyAdmins } from '../services/notificationService.js';
 /**
  * Authentication Controller
  * Handles all authentication-related operations
+ * 
+ * NOTE: Input validation is handled by validation.js middleware
+ * This controller focuses on business logic only
  */
 
 /**
@@ -16,29 +19,34 @@ import { notifyAdmins } from '../services/notificationService.js';
  */
 export const sendRegistrationOTP = async (req, res) => {
   try {
-    // Receive ALL registration data when Register button is clicked
+    // Validation already handled by middleware
     const { email, username, password, first_name, last_name, birthday, contact, home_address } = req.body;
 
-    // Validate password strength
-    const passwordValidation = validatePasswordStrength(password);
-    if (!passwordValidation.valid) {
+    // Check if username exists (business logic check)
+    const [existingUsername] = await query(
+      'SELECT id FROM users WHERE username = ?',
+      [username]
+    );
+
+    if (existingUsername) {
       return res.status(400).json({
         success: false,
-        message: 'Password does not meet requirements',
-        errors: passwordValidation.errors
+        message: 'This username is already taken',
+        field: 'username'
       });
     }
 
-    // Check if username or email already exists
-    const [existingUser] = await query(
-      'SELECT id FROM users WHERE username = ? OR email = ?',
-      [username, email]
+    // Check if email exists (business logic check)
+    const [existingEmail] = await query(
+      'SELECT id FROM users WHERE email = ?',
+      [email]
     );
 
-    if (existingUser) {
+    if (existingEmail) {
       return res.status(400).json({
         success: false,
-        message: 'Username or email already exists'
+        message: 'This email is already registered',
+        field: 'email'
       });
     }
 
@@ -77,6 +85,7 @@ export const verifyRegistrationOTP = async (req, res) => {
   try {
     await connection.beginTransaction();
 
+    // Validation already handled by middleware
     const { email, otp, username, password, first_name, last_name, birthday, contact, home_address } = req.body;
 
     // Verify OTP
@@ -90,24 +99,13 @@ export const verifyRegistrationOTP = async (req, res) => {
       });
     }
 
-    // Validate password strength
-    const passwordValidation = validatePasswordStrength(password);
-    if (!passwordValidation.valid) {
-      await connection.rollback();
-      return res.status(400).json({
-        success: false,
-        message: 'Password does not meet requirements',
-        errors: passwordValidation.errors
-      });
-    }
-
-    // Check if user already exists
-    const [existingUser] = await query(
+    // Check if user already exists (double-check before insertion)
+    const [existingUsers] = await connection.execute(
       'SELECT id FROM users WHERE username = ? OR email = ?',
       [username, email]
     );
 
-    if (existingUser) {
+    if (existingUsers.length > 0) {
       await connection.rollback();
       return res.status(400).json({
         success: false,
@@ -118,20 +116,27 @@ export const verifyRegistrationOTP = async (req, res) => {
     // Hash password
     const hashedPassword = await hashPassword(password);
 
+    // Handle optional fields - convert empty strings to null
+    const birthdayValue = birthday && birthday.trim() !== '' ? birthday : null;
+    const addressValue = home_address && home_address.trim() !== '' ? home_address : null;
+    const lastnameValue = last_name && last_name.trim() !== '' ? last_name : null;
+
     // Create user account
-    const [result] = await query(
+    const [result] = await connection.execute(
       `INSERT INTO users (username, first_name, last_name, email, birthday, contact, home_address, hashed_password, role, is_verified)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'student', TRUE)`,
-      [username, first_name, last_name, email, birthday || null, contact || null, home_address || null, hashedPassword]
+      [username, first_name, lastnameValue, email, birthdayValue, contact || null, addressValue, hashedPassword]
     );
 
     const userId = result.insertId;
 
     // Get created user (without password)
-    const [user] = await query(
+    const [users] = await connection.execute(
       'SELECT id, username, first_name, last_name, email, role, is_verified, created_at FROM users WHERE id = ?',
       [userId]
     );
+
+    const user = users[0];
 
     // Generate JWT token
     const token = generateToken({
@@ -147,7 +152,7 @@ export const verifyRegistrationOTP = async (req, res) => {
     try {
       await notifyAdmins(
         'user',
-        `New user registered: ${user.first_name} ${user.last_name} (${user.email})`,
+        `New user registered: ${user.first_name} ${user.last_name || ''} (${user.email})`,
         `/frontend/views/admin/users.html`
       );
     } catch (notifError) {
@@ -218,6 +223,7 @@ export const resendRegistrationOTP = async (req, res) => {
  */
 export const login = async (req, res) => {
   try {
+    // Validation already handled by middleware
     const { username, password } = req.body;
     const ipAddress = req.ip || req.connection.remoteAddress;
 
@@ -301,13 +307,15 @@ export const login = async (req, res) => {
     });
   }
 };
-
 /**
  * Forgot password - Send OTP
  * POST /api/auth/forgot-password
+ * 
+ * Updated to explicitly check if email exists before sending OTP
  */
 export const forgotPassword = async (req, res) => {
   try {
+    // Validation already handled by middleware
     const { email } = req.body;
 
     // Check if user exists
@@ -317,10 +325,10 @@ export const forgotPassword = async (req, res) => {
     );
 
     if (!user) {
-      // Don't reveal if email exists (security best practice)
-      return res.json({
-        success: true,
-        message: 'If an account exists with this email, an OTP has been sent.'
+      // Return explicit error if email does not exist
+      return res.status(404).json({
+        success: false,
+        message: 'Email address not found. Please check and try again.'
       });
     }
 
@@ -334,9 +342,10 @@ export const forgotPassword = async (req, res) => {
       });
     }
 
+    // Return success - frontend will redirect to OTP page automatically
     res.json({
       success: true,
-      message: 'If an account exists with this email, an OTP has been sent.',
+      message: 'OTP sent to your email.',
       ...(process.env.NODE_ENV === 'development' && { otp: result.otp })
     });
   } catch (error) {
@@ -354,6 +363,7 @@ export const forgotPassword = async (req, res) => {
  */
 export const verifyResetOTP = async (req, res) => {
   try {
+    // Validation already handled by middleware
     const { email, otp } = req.body;
 
     // Verify OTP
@@ -366,8 +376,8 @@ export const verifyResetOTP = async (req, res) => {
       });
     }
 
-    // Generate a temporary reset token (can be used for additional security)
-    const resetToken = generateToken({ email, type: 'password_reset' });
+    // Generate a short-lived temporary reset token (15 minutes)
+    const resetToken = generateToken({ email, type: 'password_reset' }, '15m');
 
     res.json({
       success: true,
@@ -386,6 +396,9 @@ export const verifyResetOTP = async (req, res) => {
 /**
  * Reset password
  * POST /api/auth/reset-password
+ * 
+ * UPDATED: No longer verifies OTP here since it was already verified in verify-reset-otp
+ * Instead, uses a temporary reset token for security
  */
 export const resetPassword = async (req, res) => {
   const connection = await getConnection();
@@ -393,37 +406,34 @@ export const resetPassword = async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    const { email, otp, newPassword } = req.body;
+    // Validation already handled by middleware
+    const { email, newPassword, resetToken } = req.body;
 
-    // Verify OTP first
-    const otpResult = await otpService.verifyOTP(email, otp, 'reset_password');
-    
-    if (!otpResult.valid) {
+    // Verify reset token
+    if (!resetToken) {
       await connection.rollback();
       return res.status(400).json({
         success: false,
-        message: otpResult.message
+        message: 'Reset token is required'
       });
     }
 
-    // Validate password strength
-    const passwordValidation = validatePasswordStrength(newPassword);
-    if (!passwordValidation.valid) {
+    const decoded = verifyToken(resetToken);
+    if (!decoded || decoded.type !== 'password_reset' || decoded.email !== email) {
       await connection.rollback();
-      return res.status(400).json({
+      return res.status(403).json({
         success: false,
-        message: 'Password does not meet requirements',
-        errors: passwordValidation.errors
+        message: 'Invalid or expired reset token'
       });
     }
 
     // Find user
-    const [user] = await query(
+    const [users] = await connection.execute(
       'SELECT id FROM users WHERE email = ?',
       [email]
     );
 
-    if (!user) {
+    if (users.length === 0) {
       await connection.rollback();
       return res.status(404).json({
         success: false,
@@ -431,11 +441,13 @@ export const resetPassword = async (req, res) => {
       });
     }
 
+    const user = users[0];
+
     // Hash new password
     const hashedPassword = await hashPassword(newPassword);
 
     // Update password
-    await query(
+    await connection.execute(
       'UPDATE users SET hashed_password = ? WHERE id = ?',
       [hashedPassword, user.id]
     );
@@ -500,4 +512,3 @@ export const logout = async (req, res) => {
     message: 'Logged out successfully'
   });
 };
-

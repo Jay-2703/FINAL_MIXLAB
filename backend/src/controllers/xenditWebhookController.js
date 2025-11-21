@@ -17,6 +17,7 @@ export const handleXenditWebhook = async (req, res) => {
     // Verify webhook token
     const webhookToken = req.headers['x-callback-token'];
     if (!verifyWebhookToken(webhookToken)) {
+      console.warn('Invalid webhook token received');
       return res.status(401).json({
         success: false,
         message: 'Invalid webhook token'
@@ -24,6 +25,7 @@ export const handleXenditWebhook = async (req, res) => {
     }
 
     const event = req.body;
+    console.log('Xendit webhook received:', event.status, event.external_id);
 
     // Handle different event types
     switch (event.status) {
@@ -62,12 +64,17 @@ async function handlePaymentSuccess(event) {
     const invoiceId = event.id;
     const paymentId = event.payment_id;
 
+    console.log(`Processing payment success for booking: ${externalId}`);
+
     // Find booking by external_id (booking_id)
-    const [booking] = await query(
+    const bookingResults = await query(
       'SELECT * FROM bookings WHERE booking_id = ?',
       [externalId],
       connection
     );
+
+    // Handle array response properly
+    const booking = Array.isArray(bookingResults) ? bookingResults[0] : bookingResults;
 
     if (!booking) {
       console.error('Booking not found for payment:', externalId);
@@ -75,39 +82,51 @@ async function handlePaymentSuccess(event) {
       return;
     }
 
+    console.log(`Found booking ${booking.id} for ${booking.name}`);
+
     // Update booking payment status
     await query(
       `UPDATE bookings 
        SET payment_status = 'paid', 
            xendit_payment_id = ?,
-           reference_number = ?,
            updated_at = NOW()
        WHERE booking_id = ?`,
-      [paymentId, invoiceId, externalId],
+      [paymentId, externalId],
       connection
     );
 
-    // Generate QR code if not already generated
+    // Generate QR code if service exists
     let qrDataUrl = booking.qr_code_data;
     
-    if (!qrDataUrl) {
-      const qrResult = await qrService.generateBookingQR(booking, booking.booking_id);
-      if (qrResult.success) {
-        qrDataUrl = qrResult.qrDataUrl;
-        await query(
-          'UPDATE bookings SET qr_code_path = ?, qr_code_data = ? WHERE booking_id = ?',
-          [qrResult.qrPath, qrDataUrl, externalId],
-          connection
-        );
+    if (!qrDataUrl && qrService && qrService.generateBookingQR) {
+      console.log(`Generating QR code for booking ${externalId}`);
+      try {
+        const qrResult = await qrService.generateBookingQR(booking, booking.booking_id);
+        if (qrResult.success) {
+          qrDataUrl = qrResult.qrDataUrl;
+          await query(
+            'UPDATE bookings SET qr_code_path = ?, qr_code_data = ? WHERE booking_id = ?',
+            [qrResult.qrPath, qrDataUrl, externalId],
+            connection
+          );
+        }
+      } catch (qrError) {
+        console.warn('QR code generation failed:', qrError.message);
       }
     }
 
     await connection.commit();
 
-    // Send confirmation email with QR code
-    if (booking.email && qrDataUrl) {
-      const updatedBooking = { ...booking, payment_status: 'paid', reference_number: invoiceId };
-      await bookingEmailService.sendBookingConfirmation(updatedBooking, qrDataUrl);
+    // Send confirmation email if service exists
+    if (booking.email && bookingEmailService && bookingEmailService.sendBookingConfirmation) {
+      const updatedBooking = { 
+        ...booking, 
+        payment_status: 'paid'
+      };
+      
+      bookingEmailService.sendBookingConfirmation(updatedBooking, qrDataUrl)
+        .then(() => console.log(`Confirmation email sent to ${booking.email}`))
+        .catch(err => console.error('Failed to send confirmation email:', err));
     }
 
     console.log(`✅ Payment successful for booking ${externalId}`);
@@ -126,10 +145,11 @@ async function handlePaymentSuccess(event) {
 async function handlePaymentExpired(event) {
   try {
     const externalId = event.external_id;
+    console.log(`Processing payment expiry for booking: ${externalId}`);
 
     await query(
       `UPDATE bookings 
-       SET payment_status = 'failed',
+       SET payment_status = 'expired',
            updated_at = NOW()
        WHERE booking_id = ? AND payment_status = 'pending'`,
       [externalId]
@@ -147,6 +167,7 @@ async function handlePaymentExpired(event) {
 async function handlePaymentFailed(event) {
   try {
     const externalId = event.external_id;
+    console.log(`Processing payment failure for booking: ${externalId}`);
 
     await query(
       `UPDATE bookings 
@@ -170,10 +191,16 @@ export const verifyPaymentStatus = async (req, res) => {
   try {
     const { bookingId } = req.params;
 
-    const [booking] = await query(
+    console.log(`🔍 Verifying payment for booking: ${bookingId}`);
+
+    // Get booking from database
+    const bookingResults = await query(
       'SELECT * FROM bookings WHERE booking_id = ?',
       [bookingId]
     );
+
+    // Handle array response
+    const booking = Array.isArray(bookingResults) ? bookingResults[0] : bookingResults;
 
     if (!booking) {
       return res.status(404).json({
@@ -182,35 +209,45 @@ export const verifyPaymentStatus = async (req, res) => {
       });
     }
 
-    // If has Xendit invoice ID, check status
-    if (booking.xendit_invoice_id) {
+    // If has Xendit invoice ID and payment is still pending, check with Xendit
+    if (booking.xendit_invoice_id && booking.payment_status === 'pending') {
+      console.log(`Checking Xendit status for invoice: ${booking.xendit_invoice_id}`);
+      
       const invoiceStatus = await getInvoiceStatus(booking.xendit_invoice_id);
       
       if (invoiceStatus.success && invoiceStatus.data.status === 'PAID') {
-        // Update booking status
+        // Update booking status to paid
         await query(
-          'UPDATE bookings SET payment_status = "paid" WHERE booking_id = ?',
+          'UPDATE bookings SET payment_status = "paid", updated_at = NOW() WHERE booking_id = ?',
           [bookingId]
         );
+        
+        // Fetch updated booking
+        const updatedResults = await query(
+          'SELECT * FROM bookings WHERE booking_id = ?',
+          [bookingId]
+        );
+        
+        const updatedBooking = Array.isArray(updatedResults) ? updatedResults[0] : updatedResults;
+        
+        return res.json({
+          success: true,
+          data: updatedBooking
+        });
       }
     }
 
-    // Get updated booking
-    const [updatedBooking] = await query(
-      'SELECT * FROM bookings WHERE booking_id = ?',
-      [bookingId]
-    );
-
+    // Return current booking status
     res.json({
       success: true,
-      data: updatedBooking
+      data: booking
     });
   } catch (error) {
     console.error('Error verifying payment status:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error',
+      error: error.message
     });
   }
 };
-

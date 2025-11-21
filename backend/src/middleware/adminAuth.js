@@ -32,11 +32,13 @@ export const requireAdmin = async (req, res, next) => {
     }
 
     // Check if user exists and has admin/instructor role
-    const [users] = await query(
+    // FIX: Remove array destructuring - query returns rows directly
+    const users = await query(
       'SELECT id, username, email, role, is_verified FROM users WHERE id = ?',
       [decoded.id]
     );
 
+    // Check if users array exists and has results
     if (!users || users.length === 0) {
       return res.status(404).json({
         success: false,
@@ -45,6 +47,14 @@ export const requireAdmin = async (req, res, next) => {
     }
 
     const user = users[0];
+
+    // Verify user object has required properties
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User data not found'
+      });
+    }
 
     // Check if account is verified
     if (!user.is_verified) {
@@ -104,4 +114,3 @@ export const requireAdminOnly = async (req, res, next) => {
     });
   }
 };
-
